@@ -13,7 +13,7 @@ Elle remplace une application MATLAB existante, avec les mêmes calculs mais :
 
 > Statut : **amorçage**. Le squelette applicatif et la chaîne de déploiement sont en place.
 > Le moteur de calcul sera porté depuis l'application MATLAB de référence
-> (voir [`references/README.md`](references/README.md)).
+> (voir [`docs/REFERENCES.md`](docs/REFERENCES.md)).
 
 ## Démarrer en local
 
@@ -40,4 +40,4 @@ URL une fois activé : `https://microbiologames.github.io/16140-2_quanti/`
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Choix techniques et structure du code |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Étapes de développement |
 | [`docs/INPUT_FORMAT.md`](docs/INPUT_FORMAT.md) | Spécification du fichier d'entrée (à compléter) |
-| [`references/README.md`](references/README.md) | Où déposer les fichiers de référence |
+| [`docs/REFERENCES.md`](docs/REFERENCES.md) | Où vivent les fichiers de référence, et pourquoi ailleurs |

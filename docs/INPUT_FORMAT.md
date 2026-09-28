@@ -1,7 +1,7 @@
 # Format du fichier d'entrée
 
-> **À rédiger** une fois les exemples de fichiers déposés dans
-> [`references/input-examples/`](../references/input-examples/).
+> **À rédiger** une fois les exemples de fichiers déposés dans le dépôt privé de
+> références (voir [`REFERENCES.md`](REFERENCES.md)).
 
 Ce document décrira :
 

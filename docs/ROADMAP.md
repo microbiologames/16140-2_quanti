@@ -2,7 +2,7 @@
 
 ## Étape 0 — Amorçage ✅
 Squelette applicatif, chaîne de build, déploiement GitHub Pages, socle statistique testé,
-dossiers de dépôt des références.
+dépôt privé de références en place ([`REFERENCES.md`](REFERENCES.md)).
 
 ## Étape 1 — Rétro-ingénierie de l'application MATLAB ⬅️ *bloqué : en attente des fichiers*
 - Extraire et lire le source du `.mlapp` / des `.m`.

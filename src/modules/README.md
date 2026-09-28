@@ -6,4 +6,4 @@ Chaque module sera autonome : il déclare les données dont il a besoin, produit
 tableaux et des séries de figures, et n'a connaissance ni de l'UI ni du format Excel.
 
 Le découpage exact sera fixé après lecture du code MATLAB de référence
-(voir [`../../references/README.md`](../../references/README.md)).
+(voir [`../../docs/REFERENCES.md`](../../docs/REFERENCES.md)).
