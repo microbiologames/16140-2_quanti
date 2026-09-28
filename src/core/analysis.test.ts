@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { analyse, computeStatistics, type ResultTable } from './analysis'
+import { analyse, cellValue, computeStatistics, type ResultTable, type TableCell } from './analysis'
 import { buildDataset } from './dataset'
 import type { CellValue, RawWorkbook } from './types'
 
@@ -30,6 +30,9 @@ function workbookFrom(rows: { id: number; rm: CellValue; am: CellValue; cat: num
 
 const table = (tables: ResultTable[], sheetName: string) =>
   tables.find((candidate) => candidate.sheetName === sheetName)!
+
+/** Les cellules calculées portent une formule ; les tests comparent leur valeur. */
+const values = (row: TableCell[]) => row.map(cellValue)
 
 describe('computeStatistics', () => {
   /** Référence : SciPy, demi-largeur t(0,975 ; n−1) · SD · √(1 + 1/n). */
@@ -85,9 +88,9 @@ describe('analyse — statistiques par catégorie', () => {
   it('reprend ces valeurs dans le tableau 4, catégories puis total', () => {
     const rows4 = table(result.tables, 'Tableau 4').rows
     expect(rows4).toHaveLength(3)
-    expect(rows4[0]![0]).toBe(1)
-    expect(rows4[2]![0]).toBe('All categories')
-    expect(rows4[2]![1]).toBe(8)
+    expect(values(rows4[0]!)[0]).toBe(1)
+    expect(values(rows4[2]!)[0]).toBe('All categories')
+    expect(values(rows4[2]!)[1]).toBe(8)
   })
 })
 
@@ -108,15 +111,15 @@ describe('analyse — effectifs et exclusions', () => {
   it('ventile les effectifs par cas dans le tableau 2, ordre 1 / 4 / 2 / 3', () => {
     const rows2 = table(result.tables, 'Tableau 2').rows
     const typeA = rows2.find((row) => row[1] === 'Lait')!
-    expect(typeA.slice(2)).toEqual([3, 2, 0, 1, 0])
+    expect(values(typeA).slice(2)).toEqual([3, 2, 0, 1, 0])
     const total = rows2[rows2.length - 1]!
-    expect(total.slice(2)).toEqual([5, 2, 1, 1, 1])
+    expect(values(total).slice(2)).toEqual([5, 2, 1, 1, 1])
   })
 
   it('liste les échantillons écartés avec leur écriture normalisée', () => {
     const rows3 = table(result.tables, 'Tableau 3').rows
     expect(rows3).toHaveLength(3)
-    expect(rows3.map((row) => row[0])).toEqual([3, 4, 5])
+    expect(rows3.map((row) => cellValue(row[0]!))).toEqual([3, 4, 5])
     expect(rows3[0]![2]).toBe('1.30*') // virgule convertie, marqueur conservé
   })
 
@@ -143,7 +146,7 @@ describe('analyse — échantillons hors limites', () => {
 
   it('retient les échantillons de part et d’autre des limites globales', () => {
     const rows5 = table(result.tables, 'Tableau 5').rows
-    expect(rows5.map((row) => row[3])).toEqual([13, 14])
+    expect(rows5.map((row) => cellValue(row[3]!))).toEqual([13, 14])
   })
 
   it('note « / » quand aucune valeur n’a été corrigée', () => {
@@ -152,12 +155,12 @@ describe('analyse — échantillons hors limites', () => {
 
   it('dénombre par cas puis en total dans le tableau 6', () => {
     const rows6 = table(result.tables, 'Tableau 6').rows
-    expect(rows6.slice(0, 3)).toEqual([
+    expect(rows6.slice(0, 3).map(values)).toEqual([
       ['Interpretable results by both methods', '<LCL', 1],
       ['Interpretable results by both methods', '>UCL', 1],
       ['Interpretable results by both methods', 'Total', 2],
     ])
-    expect(rows6.slice(-3)).toEqual([
+    expect(rows6.slice(-3).map(values)).toEqual([
       [' ', 'Total <LCL', 1],
       [' ', 'Total >UCL', 1],
       [' ', 'TOTAL', 2],
@@ -176,7 +179,7 @@ describe('analyse — valeurs censurées dans le tableau 5', () => {
       { id: 14, rm: '<1,00', am: '>5,00', cat: 1, typ: 'a' },
     ]
     const rows5 = table(analyse(buildDataset(workbookFrom(rows))).tables, 'Tableau 5').rows
-    const before = new Map(rows5.map((row) => [row[3], row[7]]))
+    const before = new Map(rows5.map((row) => [cellValue(row[3]!), row[7]]))
 
     expect(before.get(13)).toBe('7.18')
     expect(before.get(14)).toBe('1.00 / 5.00')

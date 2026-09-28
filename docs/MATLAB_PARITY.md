@@ -202,20 +202,44 @@ choix et non une surprise.
 l'application et compare les six tableaux produits, **cellule par cellule**, au classeur
 correspondant produit par l'application MATLAB.
 
-**Résultat : 8 classeurs sur 8 conformes** — tolérance relative 10⁻⁹, jamais atteinte.
+**Résultat sur le corpus complet — 63 entrées, 117 sorties : 42 classeurs comparables
+sur 43 sont conformes** (tolérance relative 10⁻⁹).
 
-Les seuls écarts restants ne sont pas numériques :
+L'appariement se fait par le **contenu**, non par le nom de fichier : l'effectif, la
+moyenne et l'écart-type des différences ne dépendent pas de la formule des limites, ce
+qui en fait une empreinte stable. Les limites, elles, révèlent laquelle des deux formules
+a servi.
 
-- trois **intitulés de colonnes** dont les coquilles sont corrigées ici
-  (« buy both methods », « NUmber ») ;
-- six cellules portant le nom d'une catégorie **renommée à la main dans l'interface** au
-  moment d'une exécution d'août 2025. Le fichier d'entrée porte toujours le nom
-  d'origine : l'écart n'est pas reproductible, et n'a pas à l'être.
+Le décompte se lit ainsi :
 
-Six autres classeurs sont écartés du contrôle — ceux de mars 2025, produits avec la
-formule de l'amendement — ainsi que deux classeurs incomplets, issus d'exécutions
-interrompues. Le détail de l'appariement figure dans le dépôt privé
-(`03_sorties-excel/ANALYSE_APPARIEMENT.md`).
+| | |
+|---|---|
+| 42 conformes | dont 21 où seule la **précision de l'entrée** diffère : le fichier a été réenregistré depuis l'exécution MATLAB, avec moins de décimales |
+| 1 écart | sortie de 2021 dont l'entrée a depuis vu ses identifiants renommés (`9` devenu `A9`), ce qui change aussi l'ordre de tri |
+| 6 écartées | produites avec la formule de l'amendement |
+| 35 incomplètes | exécutions interrompues, sans `Tableau 4` |
+| 32 non appariées | aucune entrée correspondante, ou plusieurs candidates |
+
+Aucun des écarts observés ne vient d'un calcul. Les seules différences systématiques sont
+trois **intitulés de colonnes** dont les coquilles sont corrigées ici (« buy both
+methods », « NUmber »).
+
+Le détail figure dans le dépôt privé (`03_sorties-excel/ANALYSE_APPARIEMENT.md`).
+
+### Les formules du classeur exporté
+
+Le classeur ne porte plus seulement des valeurs : les effectifs, les totaux, le biais, la
+dispersion et les limites sont des **formules Excel** adossées à une feuille de données
+qui liste les échantillons tels que l'application les a classés.
+
+Chaque cellule calculée porte aussi sa **valeur en cache** : le fichier est juste dès
+l'ouverture, y compris dans un lecteur qui ne recalcule pas.
+
+Les formules ont été évaluées par un moteur de calcul indépendant (`formulas`, Python) et
+comparées à ces valeurs : **55 cellules, écart relatif maximal 1,2 × 10⁻¹⁵**. Elles
+n'emploient que des fonctions antérieures à Excel 2010 — `COUNTIFS`, `AVERAGEIFS`,
+`SUMPRODUCT`, `TINV` — leurs équivalents modernes devant être préfixés `_xlfn.` dans le
+fichier et ne s'ouvrant pas partout.
 
 ### Deux niveaux de contrôle
 

@@ -79,6 +79,22 @@ au reste. Les modules à porter seront déterminés par lecture du code MATLAB
 (a priori : étude de linéarité, justesse relative, profil d'exactitude, étude
 interlaboratoires — **à confirmer**).
 
+## Traduction des résultats
+
+Les libellés des sorties — intitulés de tableaux, en-têtes de colonnes, titres et
+légendes des figures — vivent dans un dictionnaire écrit à la main
+(`src/core/i18n.ts`), en français et en anglais.
+
+Pas de service de traduction, pas de clé d'API, rien à payer : le vocabulaire est fermé,
+technique et normatif. Une traduction automatique écrirait « CFU » au lieu d'« UFC » et
+coûterait une requête réseau à chaque changement de langue. Ici le basculement est
+instantané, fonctionne hors ligne, et un test vérifie que les deux langues couvrent
+exactement les mêmes clés.
+
+Ce qui vient du fichier d'entrée — noms de catégories, de types et de produits — n'est
+**pas** traduit : ce sont les données de l'utilisateur. Les noms de feuilles restent eux
+aussi stables, ce sont des repères pour l'équipe et pour les modèles de rapport.
+
 ## L'export du classeur
 
 Une figure est décrite par une **scène** (`src/core/figureScene.ts`) : des positions, des
@@ -99,6 +115,27 @@ inchangés.
 Un lot se télécharge en une archive `.zip` : quatorze téléchargements successifs finissent
 par être bloqués par les navigateurs. Les `.xlsx` étant déjà compressés, l'archive les
 stocke tels quels.
+
+### Des formules, pas seulement des valeurs
+
+Le classeur porte une feuille de données listant les échantillons tels que l'application
+les a classés, et les tableaux s'y adossent : les effectifs sont des `COUNTIFS`, les
+totaux des `SUM` sur les lignes qu'ils résument, le biais un `AVERAGEIFS`, l'écart-type un
+`SUMPRODUCT`, les limites une expression de `TINV`. Le calcul devient relisible, et
+rejouable après modification des données.
+
+Deux contraintes ont guidé l'écriture :
+
+- **Une valeur en cache accompagne chaque formule.** Le fichier est juste dès l'ouverture,
+  y compris dans un lecteur qui ne recalcule pas. Le revers est qu'une formule fausse
+  resterait masquée par le cache : c'est pourquoi elles sont évaluées par un moteur
+  indépendant lors du contrôle, et que leur structure est verrouillée par des tests — une
+  plage de somme décalée d'une ligne, sinon, ne se verrait pas.
+- **Uniquement des fonctions antérieures à Excel 2010.** Les noms modernes — `T.INV.2T`,
+  `STDEV.S` — doivent être préfixés `_xlfn.` quand un outil tiers écrit directement le
+  fichier, et ne s'ouvrent pas partout. L'écart-type passe donc par `SUMPRODUCT` plutôt
+  que par une formule matricielle, qui demanderait en plus une validation par
+  Ctrl+Maj+Entrée sur les versions anciennes.
 
 ## Séparation calcul / présentation
 

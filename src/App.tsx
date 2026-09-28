@@ -4,6 +4,7 @@ import { Dropzone } from '@/ui/Dropzone'
 import { ExportButtons } from '@/ui/ExportButtons'
 import { Figures } from '@/ui/Figures'
 import { JobList } from '@/ui/JobList'
+import { LocaleToggle } from '@/ui/LocaleToggle'
 import { ResultTables } from '@/ui/ResultTables'
 import { SheetPreview } from '@/ui/SheetPreview'
 import { Summary } from '@/ui/Summary'
@@ -33,7 +34,11 @@ export default function App() {
             lieu dans le navigateur : aucune donnée n'est transmise.
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <span id="locale-hint">Résultats</span>
+            <LocaleToggle />
+          </div>
           <ThemeToggle />
           <img
             src={`${import.meta.env.BASE_URL}adria.svg`}

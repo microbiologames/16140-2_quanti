@@ -1,5 +1,7 @@
+import { strings } from './i18n'
 import type { AnalysisResult, GroupStatistics } from './analysis'
 import type { Category, Sample } from './dataset'
+import type { OutputStrings } from './i18n'
 
 /**
  * Modèle de figure : des données et des rôles, aucune couleur ni aucun pixel.
@@ -63,11 +65,6 @@ export interface Figure {
   lines: ReferenceLine[]
 }
 
-const AXIS_SCATTER_X = 'Reference method (log CFU/g)'
-const AXIS_SCATTER_Y = 'Alternative method (log CFU/g)'
-const AXIS_BA_X = 'Mean (log CFU/g)'
-const AXIS_BA_Y = 'Difference alternative − reference (log CFU/g)'
-
 /** `round` de MATLAB : la moitié s'éloigne de zéro, là où `Math.round` va vers +∞. */
 function roundHalfAwayFromZero(value: number): number {
   return Math.sign(value) * Math.round(Math.abs(value))
@@ -97,6 +94,7 @@ const point = (sample: Sample, x: number, y: number): FigurePoint => ({ x, y, ..
 function excludedSeries(
   samples: Sample[],
   toPoint: (sample: Sample) => FigurePoint,
+  text: OutputStrings,
 ): FigureSeries[] {
   const build = (
     caseValue: 2 | 3,
@@ -110,8 +108,8 @@ function excludedSeries(
   }
 
   return [
-    ...build(2, 'case-2', '<4 colonies/plate', 'circle', { kind: 'case2' }),
-    ...build(3, 'case-3', 'corrected values', 'square', { kind: 'case3' }),
+    ...build(2, 'case-2', text.figures.lowCountSeries, 'circle', { kind: 'case2' }),
+    ...build(3, 'case-3', text.figures.correctedSeries, 'square', { kind: 'case3' }),
   ]
 }
 
@@ -156,14 +154,14 @@ function seriesByCategory(
     .filter((series) => series.points.length > 0)
 }
 
-function blandAltmanLines(statistics: GroupStatistics): ReferenceLine[] {
-  const lines: ReferenceLine[] = [{ role: 'identity', label: 'y = 0', value: 0 }]
+function blandAltmanLines(statistics: GroupStatistics, text: OutputStrings): ReferenceLine[] {
+  const lines: ReferenceLine[] = [{ role: 'identity', label: text.figures.identityZero, value: 0 }]
   if (!Number.isFinite(statistics.meanDifference)) return lines
-  lines.push({ role: 'bias', label: 'Bias', value: statistics.meanDifference })
+  lines.push({ role: 'bias', label: text.figures.bias, value: statistics.meanDifference })
   if (Number.isFinite(statistics.lowerLimit)) {
     lines.push(
-      { role: 'limit', label: '95 % lower limit', value: statistics.lowerLimit },
-      { role: 'limit', label: '95 % upper limit', value: statistics.upperLimit },
+      { role: 'limit', label: text.figures.lowerLimit, value: statistics.lowerLimit },
+      { role: 'limit', label: text.figures.upperLimit, value: statistics.upperLimit },
     )
   }
   return lines
@@ -172,6 +170,7 @@ function blandAltmanLines(statistics: GroupStatistics): ReferenceLine[] {
 /** Construit les quatre familles de figures, dans l'ordre des feuilles de sortie. */
 export function buildFigures(result: AnalysisResult): Figure[] {
   const { dataset, overall, byCategory } = result
+  const text = strings(result.locale)
   const { samples } = dataset
   const domain = scatterDomain(samples)
 
@@ -190,43 +189,43 @@ export function buildFigures(result: AnalysisResult): Figure[] {
     figures.push({
       sheetName: `Plot_cat_${category.index}`,
       title: category.name,
-      xLabel: AXIS_SCATTER_X,
-      yLabel: AXIS_SCATTER_Y,
+      xLabel: text.figures.scatterX,
+      yLabel: text.figures.scatterY,
       xDomain: domain,
       yDomain: domain,
       series: [
         ...seriesByType(inCategory, category, scatterPoint),
-        ...excludedSeries(inCategory, scatterPoint),
+        ...excludedSeries(inCategory, scatterPoint, text),
       ],
-      lines: [{ role: 'identity', label: 'y = x', diagonal: true }],
+      lines: [{ role: 'identity', label: text.figures.identityDiagonal, diagonal: true }],
     })
   }
 
   figures.push({
     sheetName: 'Plot_allcat',
-    title: 'Toutes catégories',
-    xLabel: AXIS_SCATTER_X,
-    yLabel: AXIS_SCATTER_Y,
+    title: text.figures.allCategories,
+    xLabel: text.figures.scatterX,
+    yLabel: text.figures.scatterY,
     xDomain: domain,
     yDomain: domain,
     series: [
       ...seriesByCategory(samples, present, scatterPoint),
-      ...excludedSeries(samples, scatterPoint),
+      ...excludedSeries(samples, scatterPoint, text),
     ],
-    lines: [{ role: 'identity', label: 'y = x', diagonal: true }],
+    lines: [{ role: 'identity', label: text.figures.identityDiagonal, diagonal: true }],
   })
 
   figures.push({
     sheetName: 'Bland Altman',
-    title: 'Bland-Altman — toutes catégories',
-    xLabel: AXIS_BA_X,
-    yLabel: AXIS_BA_Y,
+    title: text.figures.agreementTitle(text.figures.allCategories),
+    xLabel: text.figures.agreementX,
+    yLabel: text.figures.agreementY,
     xDomain: domain,
     series: [
       ...seriesByCategory(samples, present, agreementPoint),
-      ...excludedSeries(samples, agreementPoint),
+      ...excludedSeries(samples, agreementPoint, text),
     ],
-    lines: blandAltmanLines(overall),
+    lines: blandAltmanLines(overall, text),
   })
 
   for (const category of present) {
@@ -234,16 +233,16 @@ export function buildFigures(result: AnalysisResult): Figure[] {
     const statistics = byCategory.find((entry) => entry.categoryIndex === category.index)
     figures.push({
       sheetName: `Plot_BA_cat_${category.index}`,
-      title: `Bland-Altman — ${category.name}`,
-      xLabel: AXIS_BA_X,
-      yLabel: AXIS_BA_Y,
+      title: text.figures.agreementTitle(category.name),
+      xLabel: text.figures.agreementX,
+      yLabel: text.figures.agreementY,
       xDomain: domain,
       ...(category.blandAltmanLimits ? { yDomain: category.blandAltmanLimits } : {}),
       series: [
         ...seriesByType(inCategory, category, agreementPoint),
-        ...excludedSeries(inCategory, agreementPoint),
+        ...excludedSeries(inCategory, agreementPoint, text),
       ],
-      lines: statistics ? blandAltmanLines(statistics) : [],
+      lines: statistics ? blandAltmanLines(statistics, text) : [],
     })
   }
 

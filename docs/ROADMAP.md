@@ -41,14 +41,17 @@ dépôt privé de références en place ([`REFERENCES.md`](REFERENCES.md)).
 - ✅ Bascule clair / sombre / système, mémorisée.
 - ✅ Choix entre la palette de l'application d'origine et une palette validée
   pour la vision des couleurs déficiente, mémorisé et repris à l'export.
+- ✅ Résultats en français ou en anglais, au choix — tableaux, figures et classeur.
 - Édition des libellés (catégories, types, titres d'axes).
 - Sélecteur de couleur par série, à la roue.
 - Réglages exportables en preset d'équipe.
 
 ## Étape 6 — Export ✅
-- Classeur `.xlsx` : les six tableaux mis en forme, puis les quatorze figures en
-  PNG à deux fois la résolution d'écran — lisibles partout, contrairement aux
-  métafichiers Windows de l'application d'origine.
+- Classeur `.xlsx` : les six tableaux mis en forme, une feuille de données, puis
+  les figures en PNG à deux fois la résolution d'écran — lisibles partout,
+  contrairement aux métafichiers Windows de l'application d'origine.
+- Effectifs, totaux, biais, dispersion et limites en **formules Excel**, adossées
+  à la feuille de données, avec leur valeur en cache.
 - Lot complet en une archive `.zip`, un classeur par fichier d'entrée.
 - Un classeur de 214 échantillons, 6 tableaux et 14 figures : 1,2 s.
 

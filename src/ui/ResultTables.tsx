@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import type { ResultTable, TableCell } from '@/core/analysis'
+import { cellValue, type ResultTable, type TableCell } from '@/core/analysis'
 
 /** Nombre de décimales à l'affichage. L'export Excel, lui, garde la précision entière. */
 const DECIMALS = 4
 
-function render(value: TableCell): string {
+function render(cell: TableCell): string {
+  const value = cellValue(cell)
   if (value === null) return ''
   if (typeof value !== 'number') return value
   if (Number.isNaN(value)) return '—'
@@ -12,8 +13,10 @@ function render(value: TableCell): string {
 }
 
 /** Une ligne de total n'a pas de libellé de catégorie et porte « Total » en deuxième colonne. */
-const isTotal = (row: TableCell[]) =>
-  row[0] === null && typeof row[1] === 'string' && /^total/i.test(row[1])
+const isTotal = (row: TableCell[]) => {
+  const label = cellValue(row[1] ?? null)
+  return row[0] === null && typeof label === 'string' && /^total/i.test(label)
+}
 
 export function ResultTables({ tables }: { tables: ResultTable[] }) {
   const [active, setActive] = useState(0)
@@ -70,7 +73,7 @@ export function ResultTables({ tables }: { tables: ResultTable[] }) {
                 }
               >
                 {table.columns.map((_, columnIndex) => {
-                  const value = row[columnIndex] ?? null
+                  const value = cellValue(row[columnIndex] ?? null)
                   return (
                     <td
                       key={columnIndex}
@@ -78,7 +81,7 @@ export function ResultTables({ tables }: { tables: ResultTable[] }) {
                         typeof value === 'number' ? 'numeric' : ''
                       }`}
                     >
-                      {render(value)}
+                      {render(row[columnIndex] ?? null)}
                     </td>
                   )
                 })}

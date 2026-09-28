@@ -1,10 +1,14 @@
 import { CASE_LABELS, type MeasurementCase } from './measurement'
+import { DEFAULT_LOCALE, strings, type Locale } from './i18n'
 import { mean, standardDeviation, studentTQuantile } from '@/stats'
 import type { Category, Dataset, Sample } from './dataset'
 import type { Diagnostic } from './types'
 
 /** Niveau de confiance des limites, bilatéral. Fixé à 95 % dans l'application MATLAB. */
 export const CONFIDENCE_LEVEL = 0.95
+
+/** Le risque, écrit proprement : `1 - 0.95` vaut 0,050000000000000044 en flottant. */
+const ALPHA = Number((1 - CONFIDENCE_LEVEL).toFixed(12))
 
 export interface GroupStatistics {
   n: number
@@ -19,7 +23,24 @@ export interface CategoryStatistics extends GroupStatistics {
   categoryIndex: number
 }
 
-export type TableCell = string | number | null
+/**
+ * Cellule calculée : la formule pour Excel, et sa valeur déjà résolue.
+ *
+ * La valeur en cache rend le classeur juste dès l'ouverture, même dans un lecteur qui
+ * ne recalcule pas ; la formule, elle, rend le résultat vérifiable et permet de rejouer
+ * le calcul après modification des données.
+ */
+export interface FormulaCell {
+  formula: string
+  result: string | number
+}
+
+export type TableCell = string | number | null | FormulaCell
+
+/** Valeur d'une cellule, formule résolue. */
+export function cellValue(cell: TableCell): string | number | null {
+  return cell !== null && typeof cell === 'object' ? cell.result : cell
+}
 
 export interface ResultTable {
   /** Nom de la feuille dans le classeur de sortie, identique à celui de l'application MATLAB. */
@@ -32,9 +53,11 @@ export interface ResultTable {
 
 export interface AnalysisResult {
   fileName: string
+  locale: Locale
   dataset: Dataset
   overall: GroupStatistics
   byCategory: CategoryStatistics[]
+  /** Les six tableaux, puis la feuille de données qui porte les formules. */
   tables: ResultTable[]
   diagnostics: Diagnostic[]
 }
@@ -73,10 +96,12 @@ export function computeStatistics(differences: readonly number[]): GroupStatisti
 }
 
 const interpretable = (sample: Sample) => sample.case === 1
-const byCategoryThenTypeThenId = (a: Sample, b: Sample) =>
-  a.categoryIndex - b.categoryIndex ||
-  a.type.localeCompare(b.type) ||
+
+const compareIds = (a: Sample, b: Sample) =>
   String(a.id).localeCompare(String(b.id), undefined, { numeric: true })
+
+const byCategoryThenTypeThenId = (a: Sample, b: Sample) =>
+  a.categoryIndex - b.categoryIndex || a.type.localeCompare(b.type) || compareIds(a, b)
 
 function typesOf(samples: Sample[]): string[] {
   return [...new Set(samples.map((sample) => sample.type))].sort()
@@ -86,67 +111,194 @@ function countCase(samples: Sample[], value: MeasurementCase): number {
   return samples.filter((sample) => sample.case === value).length
 }
 
+/* ------------------------------------------------------------------ formules */
+
+/**
+ * Adresses de la feuille de données, sur laquelle s'appuient toutes les formules.
+ *
+ * Les fonctions employées — COUNTIFS, AVERAGEIFS, SUMPRODUCT, TINV — datent toutes
+ * d'Excel 2007 au plus tard. Leurs équivalents modernes (T.INV.2T, STDEV.S) devraient
+ * être préfixés `_xlfn.` dans le fichier, et ne s'ouvriraient pas partout.
+ */
+class DataSheetRefs {
+  constructor(
+    private readonly sheet: string,
+    private readonly rowCount: number,
+  ) {}
+
+  /** Colonne entière, en-tête compris : les fonctions de comptage l'ignorent. */
+  column(letter: string): string {
+    return `'${this.sheet}'!$${letter}:$${letter}`
+  }
+
+  /** Plage bornée aux lignes de données, nécessaire au calcul terme à terme. */
+  range(letter: string): string {
+    return `'${this.sheet}'!$${letter}$2:$${letter}$${this.rowCount + 1}`
+  }
+}
+
+const COLUMN_CATEGORY = 'B'
+const COLUMN_TYPE = 'C'
+const COLUMN_CASE = 'D'
+const COLUMN_DIFFERENCE = 'H'
+
+/** Lettre de colonne d'un tableau de sortie, à partir de son index. */
+const letter = (index: number) => String.fromCharCode(65 + index)
+
+/* -------------------------------------------------------------------- tables */
+
+interface Context {
+  locale: Locale
+  text: ReturnType<typeof strings>
+  refs: DataSheetRefs
+}
+
+/** Feuille de données : une ligne par échantillon, cible de toutes les formules. */
+function buildDataTable(samples: Sample[], context: Context): ResultTable {
+  const number = (value: number): number | null => (Number.isFinite(value) ? value : null)
+
+  return {
+    sheetName: context.text.dataSheet.name,
+    title: context.text.dataSheet.name,
+    columns: context.text.dataSheet.columns,
+    rows: samples.map((sample): TableCell[] => [
+      sample.id as TableCell,
+      sample.categoryIndex,
+      sample.type,
+      sample.case,
+      number(sample.reference.corrected),
+      number(sample.alternative.corrected),
+      number(sample.average),
+      number(sample.difference),
+    ]),
+  }
+}
+
 /**
  * Tableaux 1 et 2 : effectifs par catégorie et par type, avec sous-totaux par catégorie
  * puis total général. Le tableau 2 détaille par cas — dans l'ordre 1, 4, 2, 3, celui de
  * l'application MATLAB.
+ *
+ * Les effectifs sont des COUNTIFS sur la feuille de données, les totaux des SUM sur les
+ * lignes qu'ils résument : le classeur se relit et se recalcule.
  */
-function buildCountTables(samples: Sample[], categories: Category[]): [ResultTable, ResultTable] {
+function buildCountTables(
+  samples: Sample[],
+  categories: Category[],
+  context: Context,
+): [ResultTable, ResultTable] {
+  const { refs, text } = context
   const short: TableCell[][] = []
   const detailed: TableCell[][] = []
+  const subtotalRows: number[] = []
 
-  const counts = (group: Sample[]): TableCell[] => [
-    group.length,
-    countCase(group, 1),
-    countCase(group, 4),
-    countCase(group, 2),
-    countCase(group, 3),
-  ]
+  const criteria = (categoryIndex: number, type?: string) =>
+    [
+      `${refs.column(COLUMN_CATEGORY)},${categoryIndex}`,
+      type === undefined ? null : `${refs.column(COLUMN_TYPE)},"${type}"`,
+    ]
+      .filter((part): part is string => part !== null)
+      .join(',')
+
+  const count = (group: Sample[], base: string, caseValue?: MeasurementCase): FormulaCell => {
+    const filter = caseValue === undefined ? '' : `,${refs.column(COLUMN_CASE)},${caseValue}`
+    const result =
+      caseValue === undefined ? group.length : group.filter((s) => s.case === caseValue).length
+    return { formula: `COUNTIFS(${base}${filter})`, result }
+  }
+
+  /** Ligne de sous-total : la somme des lignes de détail qu'elle ferme. */
+  const sumRows = (column: number, from: number, to: number, result: number): FormulaCell => ({
+    formula: `SUM(${letter(column)}${from}:${letter(column)}${to})`,
+    result,
+  })
+
+  const sumCells = (column: number, rows: number[], result: number): FormulaCell => ({
+    formula: rows.map((row) => `${letter(column)}${row}`).join('+'),
+    result,
+  })
 
   for (const category of categories) {
     const inCategory = samples.filter((sample) => sample.categoryIndex === category.index)
     if (inCategory.length === 0) continue
 
+    const firstRow = short.length + 2 // ligne 1 : en-tête
     for (const type of typesOf(inCategory)) {
       const group = inCategory.filter((sample) => sample.type === type)
+      const base = criteria(category.index, type)
       const head: TableCell[] = [category.name, category.typeNames[type] ?? type]
-      const [tested, interp, ...rest] = counts(group)
-      short.push([...head, tested!, interp!])
-      detailed.push([...head, tested!, interp!, ...rest])
-    }
 
-    const [tested, interp, ...rest] = counts(inCategory)
-    short.push([null, 'Total', tested!, interp!])
-    detailed.push([null, 'Total', tested!, interp!, ...rest])
+      short.push([...head, count(group, base), count(group, base, 1)])
+      detailed.push([
+        ...head,
+        count(group, base),
+        count(group, base, 1),
+        count(group, base, 4),
+        count(group, base, 2),
+        count(group, base, 3),
+      ])
+    }
+    const lastRow = short.length + 1
+    const subtotal = short.length + 2
+    subtotalRows.push(subtotal)
+
+    const totals = [
+      inCategory.length,
+      countCase(inCategory, 1),
+      countCase(inCategory, 4),
+      countCase(inCategory, 2),
+      countCase(inCategory, 3),
+    ]
+    short.push([
+      null,
+      text.rows.total,
+      sumRows(2, firstRow, lastRow, totals[0]!),
+      sumRows(3, firstRow, lastRow, totals[1]!),
+    ])
+    detailed.push([
+      null,
+      text.rows.total,
+      ...totals.map((total, index) => sumRows(index + 2, firstRow, lastRow, total)),
+    ])
   }
 
-  const [tested, interp, ...rest] = counts(samples)
-  short.push([null, 'Total', tested!, interp!])
-  detailed.push([null, 'Total', tested!, interp!, ...rest])
+  const grand = [
+    samples.length,
+    countCase(samples, 1),
+    countCase(samples, 4),
+    countCase(samples, 2),
+    countCase(samples, 3),
+  ]
+  short.push([
+    null,
+    text.rows.total,
+    sumCells(2, subtotalRows, grand[0]!),
+    sumCells(3, subtotalRows, grand[1]!),
+  ])
+  detailed.push([
+    null,
+    text.rows.total,
+    ...grand.map((total, index) => sumCells(index + 2, subtotalRows, total)),
+  ])
 
   return [
     {
       sheetName: 'Tableau 1',
-      title: 'Effectifs testés et interprétables',
-      columns: [
-        'Category',
-        'Type',
-        'Number of tested samples',
-        'Number of samples with interpretable results by both methods',
-      ],
+      title: text.tableTitles.counts,
+      columns: [text.columns.category, text.columns.type, text.columns.tested, text.columns.interpretable],
       rows: short,
     },
     {
       sheetName: 'Tableau 2',
-      title: 'Effectifs détaillés par cas',
+      title: text.tableTitles.countsByCase,
       columns: [
-        'Category',
-        'Type',
-        'Number of tested samples',
-        'Number of samples with interpretable results by both methods',
-        'Number of samples with no results (ND)',
-        'Number of samples with less than 4 colonies/plate',
-        'Number of samples below or above the quantification limit',
+        text.columns.category,
+        text.columns.type,
+        text.columns.tested,
+        text.columns.interpretable,
+        text.columns.noResult,
+        text.columns.lowCount,
+        text.columns.outOfRange,
       ],
       rows: detailed,
     },
@@ -154,7 +306,7 @@ function buildCountTables(samples: Sample[], categories: Category[]): [ResultTab
 }
 
 /** Tableau 3 : les échantillons écartés des calculs, avec leurs valeurs d'origine. */
-function buildExcludedTable(samples: Sample[]): ResultTable {
+function buildExcludedTable(samples: Sample[], { text }: Context): ResultTable {
   const rows = samples
     .filter((sample) => !interpretable(sample))
     .sort(byCategoryThenTypeThenId)
@@ -169,52 +321,94 @@ function buildExcludedTable(samples: Sample[]): ResultTable {
 
   return {
     sheetName: 'Tableau 3',
-    title: 'Échantillons non utilisés dans les calculs',
+    title: text.tableTitles.excluded,
     columns: [
-      'Sample n°',
-      'Product',
-      'Reference method (log CFU/g)',
-      'Alternative method (log CFU/g)',
-      'Category',
-      'Type',
+      text.columns.sampleNumber,
+      text.columns.product,
+      text.columns.referenceWithUnit,
+      text.columns.alternativeWithUnit,
+      text.columns.category,
+      text.columns.type,
     ],
     rows,
   }
 }
 
-function buildStatisticsTable(overall: GroupStatistics, byCategory: CategoryStatistics[]): ResultTable {
-  const line = (label: TableCell, s: GroupStatistics): TableCell[] => [
-    label,
-    s.n,
-    s.meanDifference,
-    s.standardDeviation,
-    s.lowerLimit,
-    s.upperLimit,
-  ]
+/**
+ * Tableau 4 : effectif, biais, dispersion et limites, par catégorie puis en tout.
+ *
+ * Entièrement en formules : l'écart-type passe par SUMPRODUCT plutôt que par une
+ * formule matricielle, qui demanderait une validation par Ctrl+Maj+Entrée sur les
+ * versions d'Excel antérieures aux tableaux dynamiques.
+ */
+function buildStatisticsTable(
+  overall: GroupStatistics,
+  byCategory: CategoryStatistics[],
+  context: Context,
+): ResultTable {
+  const { refs, text } = context
+  const rows: TableCell[][] = []
+
+  const line = (label: TableCell, statistics: GroupStatistics, categoryIndex?: number): TableCell[] => {
+    const row = rows.length + 2
+    const caseFilter = `${refs.column(COLUMN_CASE)},1`
+    const scope =
+      categoryIndex === undefined
+        ? caseFilter
+        : `${refs.column(COLUMN_CATEGORY)},${categoryIndex},${caseFilter}`
+
+    const mask =
+      categoryIndex === undefined
+        ? `(${refs.range(COLUMN_CASE)}=1)`
+        : `(${refs.range(COLUMN_CATEGORY)}=${categoryIndex})*(${refs.range(COLUMN_CASE)}=1)`
+
+    const nCell = `B${row}`
+    const meanCell = `C${row}`
+    const sdCell = `D${row}`
+    const halfWidth = `TINV(${ALPHA},${nCell}-1)*${sdCell}*SQRT(1+1/${nCell})`
+
+    return [
+      label,
+      { formula: `COUNTIFS(${scope})`, result: statistics.n },
+      {
+        formula: `AVERAGEIFS(${refs.column(COLUMN_DIFFERENCE)},${scope})`,
+        result: statistics.meanDifference,
+      },
+      {
+        formula: `SQRT(SUMPRODUCT(${mask}*(${refs.range(COLUMN_DIFFERENCE)}-${meanCell})^2)/(${nCell}-1))`,
+        result: statistics.standardDeviation,
+      },
+      { formula: `${meanCell}-${halfWidth}`, result: statistics.lowerLimit },
+      { formula: `${meanCell}+${halfWidth}`, result: statistics.upperLimit },
+    ]
+  }
+
+  for (const statistics of byCategory) {
+    rows.push(line(statistics.categoryIndex, statistics, statistics.categoryIndex))
+  }
+  rows.push(line(text.rows.allCategories, overall))
 
   return {
     sheetName: 'Tableau 4',
-    title: 'Biais et limites de concordance',
+    title: text.tableTitles.statistics,
     columns: [
-      'Category',
-      'n',
-      'Average difference',
-      'Standard deviation of differences',
-      '95% lower limit',
-      '95% upper limit',
+      text.columns.category,
+      text.columns.n,
+      text.columns.meanDifference,
+      text.columns.standardDeviation,
+      text.columns.lowerLimit,
+      text.columns.upperLimit,
     ],
-    rows: [
-      ...byCategory.map((statistics) => line(statistics.categoryIndex, statistics)),
-      line('All categories', overall),
-    ],
+    rows,
   }
 }
 
 /** Texte de la colonne « valeurs avant correction », restitué tel que MATLAB l'écrit. */
 function beforeCorrection(sample: Sample): string {
   const { reference, alternative } = sample
-  const both = reference.case === 3 && alternative.case === 3
-  if (both) return `${reference.censoredText} / ${alternative.censoredText}`
+  if (reference.case === 3 && alternative.case === 3) {
+    return `${reference.censoredText} / ${alternative.censoredText}`
+  }
   if (reference.case === 3) return reference.censoredText ?? '/'
   if (alternative.case === 3) return alternative.censoredText ?? '/'
   return '/'
@@ -228,7 +422,13 @@ function beforeCorrection(sample: Sample): string {
  * c'est le comportement de l'application MATLAB, et c'est voulu — ce sont justement les
  * échantillons dont on veut savoir où ils tombent.
  */
-function buildOutlierTables(samples: Sample[], overall: GroupStatistics): [ResultTable, ResultTable] {
+function buildOutlierTables(
+  samples: Sample[],
+  overall: GroupStatistics,
+  limitsRow: number,
+  context: Context,
+): [ResultTable, ResultTable] {
+  const { refs, text } = context
   const below = (sample: Sample) => sample.difference < overall.lowerLimit
   const above = (sample: Sample) => sample.difference > overall.upperLimit
 
@@ -241,18 +441,18 @@ function buildOutlierTables(samples: Sample[], overall: GroupStatistics): [Resul
 
   const detail: ResultTable = {
     sheetName: 'Tableau 5',
-    title: 'Échantillons hors limites',
+    title: text.tableTitles.outliers,
     columns: [
-      'Classification of the data',
-      'Category',
-      'Type',
-      'N° Sample',
-      'Product',
-      'Reference method',
-      'Alternative method',
-      'Values before correction (Reference or/and alternative method)',
-      'Mean',
-      'Difference',
+      text.columns.dataClassification,
+      text.columns.category,
+      text.columns.type,
+      text.columns.sampleNumber,
+      text.columns.product,
+      text.columns.reference,
+      text.columns.alternative,
+      text.columns.beforeCorrection,
+      text.columns.mean,
+      text.columns.difference,
     ],
     rows: outliers.map((sample): TableCell[] => [
       sample.case,
@@ -268,40 +468,88 @@ function buildOutlierTables(samples: Sample[], overall: GroupStatistics): [Resul
     ]),
   }
 
+  const lowerRef = `'Tableau 4'!$E$${limitsRow}`
+  const upperRef = `'Tableau 4'!$F$${limitsRow}`
   const rows: TableCell[][] = []
+  const totalRows: number[] = []
+
+  const countOutside = (side: 'below' | 'above', result: number, caseValue?: MeasurementCase) => {
+    const scope = caseValue === undefined ? '' : `${refs.column(COLUMN_CASE)},${caseValue},`
+    const comparison =
+      side === 'below'
+        ? `"<"&${lowerRef}`
+        : `">"&${upperRef}`
+    return {
+      formula: `COUNTIFS(${scope}${refs.column(COLUMN_DIFFERENCE)},${comparison})`,
+      result,
+    }
+  }
+
   for (const value of [...new Set(outliers.map((sample) => sample.case))].sort()) {
     const group = outliers.filter((sample) => sample.case === value)
     const low = group.filter(below).length
     const high = group.filter(above).length
-    rows.push([CASE_LABELS[value], '<LCL', low], [CASE_LABELS[value], '>UCL', high], [
-      CASE_LABELS[value],
-      'Total',
-      low + high,
-    ])
+    const first = rows.length + 2
+
+    rows.push(
+      [text.cases[value - 1]!, text.rows.belowLower, countOutside('below', low, value)],
+      [text.cases[value - 1]!, text.rows.aboveUpper, countOutside('above', high, value)],
+      [
+        text.cases[value - 1]!,
+        text.rows.total,
+        { formula: `SUM(C${first}:C${first + 1})`, result: low + high },
+      ],
+    )
+    totalRows.push(first, first + 1)
   }
+
   const totalLow = outliers.filter(below).length
   const totalHigh = outliers.filter(above).length
-  rows.push([' ', 'Total <LCL', totalLow], [' ', 'Total >UCL', totalHigh], [
-    ' ',
-    'TOTAL',
-    totalLow + totalHigh,
-  ])
+  const lowRows = totalRows.filter((_, index) => index % 2 === 0)
+  const highRows = totalRows.filter((_, index) => index % 2 === 1)
+  const sumOf = (targets: number[], result: number): FormulaCell => ({
+    formula: targets.length > 0 ? targets.map((row) => `C${row}`).join('+') : String(result),
+    result,
+  })
+
+  const summaryFirst = rows.length + 2
+  rows.push(
+    [' ', text.rows.totalBelow, sumOf(lowRows, totalLow)],
+    [' ', text.rows.totalAbove, sumOf(highRows, totalHigh)],
+    [
+      ' ',
+      text.rows.grandTotal,
+      { formula: `SUM(C${summaryFirst}:C${summaryFirst + 1})`, result: totalLow + totalHigh },
+    ],
+  )
 
   const summary: ResultTable = {
     sheetName: 'Tableau 6',
-    title: 'Répartition des échantillons hors limites',
-    columns: ['', '', 'Number of samples'],
+    title: text.tableTitles.outlierSummary,
+    columns: ['', '', text.columns.sampleCount],
     rows,
   }
 
   return [detail, summary]
 }
 
+export interface AnalysisOptions {
+  locale?: Locale
+}
+
 /** Enchaîne tous les calculs sur un jeu de données déjà lu et classé. */
-export function analyse(dataset: Dataset): AnalysisResult {
+export function analyse(dataset: Dataset, options: AnalysisOptions = {}): AnalysisResult {
+  const locale = options.locale ?? DEFAULT_LOCALE
+  const text = strings(locale)
   const diagnostics: Diagnostic[] = [...dataset.diagnostics]
   const { samples, categories } = dataset
   const usable = samples.filter(interpretable)
+
+  const context: Context = {
+    locale,
+    text,
+    refs: new DataSheetRefs(text.dataSheet.name, samples.length),
+  }
 
   const overall = computeStatistics(usable.map((sample) => sample.difference))
   const byCategory: CategoryStatistics[] = categories
@@ -328,12 +576,18 @@ export function analyse(dataset: Dataset): AnalysisResult {
     }
   }
 
+  // La ligne « toutes catégories » du tableau 4, à laquelle le tableau 6 se réfère.
+  const limitsRow = byCategory.length + 2
+
   const tables = [
-    ...buildCountTables(samples, categories),
-    buildExcludedTable(samples),
-    buildStatisticsTable(overall, byCategory),
-    ...buildOutlierTables(samples, overall),
+    ...buildCountTables(samples, categories, context),
+    buildExcludedTable(samples, context),
+    buildStatisticsTable(overall, byCategory, context),
+    ...buildOutlierTables(samples, overall, limitsRow, context),
+    buildDataTable(samples, context),
   ].filter((table) => table.rows.length > 0)
 
-  return { fileName: dataset.fileName, dataset, overall, byCategory, tables, diagnostics }
+  return { fileName: dataset.fileName, locale, dataset, overall, byCategory, tables, diagnostics }
 }
+
+export { CASE_LABELS }

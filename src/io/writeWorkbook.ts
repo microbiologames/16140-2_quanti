@@ -2,7 +2,7 @@ import type ExcelJS from 'exceljs'
 import { buildFigures } from '@/core/figures'
 import { figureToSvg } from './figureSvg'
 import { svgToPng, type RenderedImage } from './svgToPng'
-import type { AnalysisResult, ResultTable } from '@/core/analysis'
+import { cellValue, type AnalysisResult, type ResultTable, type TableCell } from '@/core/analysis'
 import type { PaletteId } from '@/ui/palette'
 
 /**
@@ -29,13 +29,27 @@ export interface WorkbookOptions {
 function widthFor(table: ResultTable, column: number): number {
   const lengths = [
     table.columns[column]?.length ?? 0,
-    ...table.rows.map((row) => String(row[column] ?? '').length),
+    ...table.rows.map((row) => String(cellValue(row[column] ?? null) ?? '').length),
   ]
   return Math.min(Math.max(...lengths, 8) + 2, 52)
 }
 
-const isTotalRow = (row: ResultTable['rows'][number]) =>
-  row[0] === null && typeof row[1] === 'string' && /^total/i.test(row[1])
+const isTotalRow = (row: TableCell[]) => {
+  const label = cellValue(row[1] ?? null)
+  return row[0] === null && typeof label === 'string' && /^total/i.test(label)
+}
+
+/**
+ * Une cellule calculée part dans le classeur avec sa formule **et** sa valeur en cache :
+ * le fichier est juste dès l'ouverture, y compris dans un lecteur qui ne recalcule pas,
+ * et le calcul reste vérifiable et rejouable.
+ */
+function toExcelValue(cell: TableCell): ExcelJS.CellValue {
+  if (cell !== null && typeof cell === 'object') {
+    return { formula: cell.formula, result: cell.result } as ExcelJS.CellFormulaValue
+  }
+  return cell
+}
 
 function addTable(workbook: ExcelJS.Workbook, table: ResultTable): void {
   const sheet = workbook.addWorksheet(table.sheetName)
@@ -47,13 +61,14 @@ function addTable(workbook: ExcelJS.Workbook, table: ResultTable): void {
   header.height = 30
 
   for (const values of table.rows) {
-    const row = sheet.addRow(values.map((value) => (value === null ? null : value)))
+    const row = sheet.addRow(values.map(toExcelValue))
     if (isTotalRow(values)) {
       row.font = { bold: true }
       row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TOTAL_FILL } }
     }
-    row.eachCell((cell) => {
-      if (typeof cell.value === 'number' && !Number.isInteger(cell.value)) {
+    row.eachCell((cell, column) => {
+      const resolved = cellValue(values[column - 1] ?? null)
+      if (typeof resolved === 'number' && !Number.isInteger(resolved)) {
         cell.numFmt = `0.${'0'.repeat(DECIMALS)}`
       }
     })
