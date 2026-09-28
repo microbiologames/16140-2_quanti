@@ -6,6 +6,7 @@ import { JobList } from '@/ui/JobList'
 import { ResultTables } from '@/ui/ResultTables'
 import { SheetPreview } from '@/ui/SheetPreview'
 import { Summary } from '@/ui/Summary'
+import { ThemeToggle } from '@/ui/ThemeToggle'
 import { buildFigures } from '@/core/figures'
 import { useAppStore, useSelectedJob } from '@/state/store'
 
@@ -23,12 +24,24 @@ export default function App() {
 
   return (
     <div className="mx-auto flex h-full max-w-7xl flex-col gap-6 p-4 sm:p-6">
-      <header>
-        <h1 className="text-xl font-semibold">ISO 16140-2 — Méthodes quantitatives</h1>
-        <p className="text-sm text-slate-500">
-          Interprétation des données brutes d'études de validation de méthode. Tout le calcul a
-          lieu dans le navigateur : aucune donnée n'est transmise.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-800">
+        <div>
+          <h1 className="text-xl font-semibold">ISO 16140-2 — Méthodes quantitatives</h1>
+          <p className="mt-1 max-w-2xl text-sm text-slate-500">
+            Interprétation des données brutes d'études de validation de méthode. Tout le calcul a
+            lieu dans le navigateur : aucune donnée n'est transmise.
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <img
+            src={`${import.meta.env.BASE_URL}adria.svg`}
+            alt="ADRIA"
+            width={585}
+            height={91}
+            className="h-5 w-auto opacity-80"
+          />
+        </div>
       </header>
 
       <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[18rem_1fr]">
@@ -57,8 +70,7 @@ export default function App() {
               <p className="font-medium text-slate-700 dark:text-slate-300">Aucun fichier chargé.</p>
               <p className="mt-2">
                 Déposer un ou plusieurs classeurs d'entrée. Les tableaux et les figures de
-                l'étude sont calculés à la volée et affichés ici. L'export Excel arrive dans
-                une prochaine étape.
+                l'étude sont calculés à la volée et affichés ici.
               </p>
             </div>
           )}
@@ -80,10 +92,10 @@ export default function App() {
                     key={candidate}
                     type="button"
                     onClick={() => setView(candidate)}
-                    className={`-mb-px border-b-2 px-3 py-1.5 text-sm ${
+                    className={`-mb-px border-b-2 px-3 py-1.5 text-sm transition-colors ${
                       candidate === view
-                        ? 'border-slate-900 font-medium dark:border-slate-100'
-                        : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                        ? 'border-[var(--brand-strong)] font-medium text-[var(--brand-strong)]'
+                        : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
                     }`}
                   >
                     {candidate}

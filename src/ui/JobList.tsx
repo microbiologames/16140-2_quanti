@@ -32,7 +32,7 @@ export function JobList() {
           <div
             className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
               job.id === selectedJobId
-                ? 'bg-slate-200 dark:bg-slate-800'
+                ? 'bg-[var(--brand-soft)] ring-1 ring-[var(--brand)]/40'
                 : 'hover:bg-slate-100 dark:hover:bg-slate-900'
             }`}
           >

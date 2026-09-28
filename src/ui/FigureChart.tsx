@@ -1,42 +1,40 @@
 import { useState } from 'react'
-import { colorOf } from './palette'
-import { markerPath, niceTicks } from './markers'
-import type { Figure, FigurePoint, FigureSeries, LineRole } from '@/core/figures'
+import { cssPaint, colorOf } from './palette'
+import { markerPath } from './markers'
+import { buildScene, type SceneElement, type SceneLine, type SceneMarker } from '@/core/figureScene'
+import type { Figure, FigurePoint, FigureSeries } from '@/core/figures'
 
-const WIDTH = 660
-const HEIGHT = 440
-const MARGIN = { top: 14, right: 18, bottom: 54, left: 68 }
-const PLOT = {
-  width: WIDTH - MARGIN.left - MARGIN.right,
-  height: HEIGHT - MARGIN.top - MARGIN.bottom,
-}
-const MARKER_RADIUS = 5
-
-const LINE_COLOR: Record<LineRole, string> = {
-  identity: 'var(--chart-line-identity)',
-  bias: 'var(--chart-line-bias)',
-  limit: 'var(--chart-line-limit)',
-}
-const LINE_DASH: Record<LineRole, string | undefined> = {
-  identity: '6 4',
-  bias: undefined,
-  limit: undefined,
+function Line({ line }: { line: SceneLine }) {
+  return (
+    <line
+      x1={line.x1}
+      y1={line.y1}
+      x2={line.x2}
+      y2={line.y2}
+      stroke={cssPaint(line.stroke)}
+      strokeWidth={line.width}
+      {...(line.dash ? { strokeDasharray: line.dash } : {})}
+    />
+  )
 }
 
-/** Étendue verticale : celle imposée par le fichier, sinon les données plus une marge. */
-function verticalDomain(figure: Figure): [number, number] {
-  if (figure.yDomain) return figure.yDomain
-
-  const values = [
-    ...figure.series.flatMap((series) => series.points.map((point) => point.y)),
-    ...figure.lines.map((line) => line.value).filter((value): value is number => value !== undefined),
-  ].filter(Number.isFinite)
-
-  if (values.length === 0) return [-1, 1]
-  const low = Math.min(...values)
-  const high = Math.max(...values)
-  const padding = (high - low || 1) * 0.08
-  return [low - padding, high + padding]
+function Element({ element }: { element: SceneElement }) {
+  if (element.kind === 'line') return <Line line={element} />
+  if (element.kind === 'marker') return null
+  return (
+    <text
+      x={element.rotate ? 0 : element.x}
+      y={element.rotate ? 0 : element.y}
+      textAnchor={element.anchor}
+      fontSize={element.size}
+      fill={cssPaint(element.fill)}
+      {...(element.rotate
+        ? { transform: `translate(${element.x}, ${element.y}) rotate(${element.rotate})` }
+        : {})}
+    >
+      {element.text}
+    </text>
+  )
 }
 
 interface Hovered {
@@ -48,15 +46,19 @@ interface Hovered {
 
 export function FigureChart({ figure }: { figure: Figure }) {
   const [hovered, setHovered] = useState<Hovered | null>(null)
+  const scene = buildScene(figure)
 
-  const [xMin, xMax] = figure.xDomain
-  const [yMin, yMax] = verticalDomain(figure)
-  const toX = (value: number) => MARGIN.left + ((value - xMin) / (xMax - xMin)) * PLOT.width
-  const toY = (value: number) => MARGIN.top + PLOT.height - ((value - yMin) / (yMax - yMin)) * PLOT.height
-
-  const xTicks = niceTicks(xMin, xMax)
-  const yTicks = niceTicks(yMin, yMax)
-  const visible = figure.lines.filter((line) => line.diagonal || (line.value ?? NaN) >= yMin)
+  const hover = (marker: SceneMarker) => {
+    const series = figure.series[marker.seriesIndex]
+    const point = series?.points[marker.pointIndex]
+    if (!series || !point) return
+    setHovered({
+      point,
+      series,
+      left: (marker.x / scene.width) * 100,
+      top: (marker.y / scene.height) * 100,
+    })
+  }
 
   return (
     <figure className="m-0 space-y-3">
@@ -65,102 +67,32 @@ export function FigureChart({ figure }: { figure: Figure }) {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
         <div className="relative min-w-0 flex-1">
           <svg
-            viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+            viewBox={`0 0 ${scene.width} ${scene.height}`}
             className="w-full rounded-lg border border-slate-200 dark:border-slate-800"
             style={{ background: 'var(--chart-surface)' }}
             role="img"
-            aria-label={`${figure.title} — ${figure.series.reduce((total, s) => total + s.points.length, 0)} points`}
+            aria-label={`${figure.title} — ${scene.markers.length} points`}
           >
-            <g stroke="var(--chart-grid)" strokeWidth={1}>
-              {xTicks.map((tick) => (
-                <line key={`x${tick}`} x1={toX(tick)} x2={toX(tick)} y1={MARGIN.top} y2={MARGIN.top + PLOT.height} />
-              ))}
-              {yTicks.map((tick) => (
-                <line key={`y${tick}`} x1={MARGIN.left} x2={MARGIN.left + PLOT.width} y1={toY(tick)} y2={toY(tick)} />
-              ))}
-            </g>
-
-            <g fill="var(--chart-ink)" fontSize={12}>
-              {xTicks.map((tick) => (
-                <text key={`xl${tick}`} x={toX(tick)} y={MARGIN.top + PLOT.height + 18} textAnchor="middle">
-                  {tick}
-                </text>
-              ))}
-              {yTicks.map((tick) => (
-                <text key={`yl${tick}`} x={MARGIN.left - 10} y={toY(tick) + 4} textAnchor="end">
-                  {tick}
-                </text>
-              ))}
-            </g>
-
-            <g stroke="var(--chart-axis)" strokeWidth={1.5}>
-              <line x1={MARGIN.left} x2={MARGIN.left + PLOT.width} y1={MARGIN.top + PLOT.height} y2={MARGIN.top + PLOT.height} />
-              <line x1={MARGIN.left} x2={MARGIN.left} y1={MARGIN.top} y2={MARGIN.top + PLOT.height} />
-            </g>
-
-            <text x={MARGIN.left + PLOT.width / 2} y={HEIGHT - 12} textAnchor="middle" fontSize={12} fill="var(--chart-ink)">
-              {figure.xLabel}
-            </text>
-            <text
-              transform={`translate(16, ${MARGIN.top + PLOT.height / 2}) rotate(-90)`}
-              textAnchor="middle"
-              fontSize={12}
-              fill="var(--chart-ink)"
-            >
-              {figure.yLabel}
-            </text>
-
-            <g strokeWidth={2} fill="none">
-              {visible.map((line, index) => {
-                if (line.diagonal) {
-                  const end = Math.min(xMax, yMax)
-                  const start = Math.max(xMin, yMin)
-                  return (
-                    <line
-                      key={`d${index}`}
-                      x1={toX(start)}
-                      y1={toY(start)}
-                      x2={toX(end)}
-                      y2={toY(end)}
-                      stroke={LINE_COLOR[line.role]}
-                      strokeDasharray={LINE_DASH[line.role]}
-                    />
-                  )
-                }
-                const y = toY(line.value!)
-                return (
-                  <line
-                    key={`h${index}`}
-                    x1={MARGIN.left}
-                    x2={MARGIN.left + PLOT.width}
-                    y1={y}
-                    y2={y}
-                    stroke={LINE_COLOR[line.role]}
-                    strokeDasharray={LINE_DASH[line.role]}
-                  />
-                )
-              })}
-            </g>
-
-            {figure.series.map((series) => (
-              <g key={series.key} fill={colorOf(series.color)} stroke="var(--chart-surface)" strokeWidth={1.5}>
-                {series.points.map((point, index) => (
-                  <path
-                    key={index}
-                    d={markerPath(series.shape, MARKER_RADIUS)}
-                    transform={`translate(${toX(point.x).toFixed(1)}, ${toY(point.y).toFixed(1)})`}
-                    onMouseEnter={() =>
-                      setHovered({
-                        point,
-                        series,
-                        left: (toX(point.x) / WIDTH) * 100,
-                        top: (toY(point.y) / HEIGHT) * 100,
-                      })
-                    }
-                    onMouseLeave={() => setHovered(null)}
-                  />
-                ))}
-              </g>
+            {scene.grid.map((line, index) => (
+              <Line key={`g${index}`} line={line} />
+            ))}
+            {scene.axes.map((element, index) => (
+              <Element key={`a${index}`} element={element} />
+            ))}
+            {scene.references.map((line, index) => (
+              <Line key={`r${index}`} line={line} />
+            ))}
+            {scene.markers.map((marker, index) => (
+              <path
+                key={`m${index}`}
+                d={markerPath(marker.shape, marker.radius)}
+                transform={`translate(${marker.x.toFixed(1)}, ${marker.y.toFixed(1)})`}
+                fill={cssPaint(marker.fill)}
+                stroke="var(--chart-surface)"
+                strokeWidth={1.5}
+                onMouseEnter={() => hover(marker)}
+                onMouseLeave={() => setHovered(null)}
+              />
             ))}
           </svg>
 
@@ -199,9 +131,9 @@ export function FigureChart({ figure }: { figure: Figure }) {
                   y1={line.diagonal ? 13 : 7}
                   x2={14}
                   y2={line.diagonal ? 1 : 7}
-                  stroke={LINE_COLOR[line.role]}
+                  stroke={cssPaint({ token: 'line', role: line.role })}
                   strokeWidth={2}
-                  strokeDasharray={LINE_DASH[line.role]}
+                  {...(line.role === 'identity' ? { strokeDasharray: '3 2' } : {})}
                 />
               </svg>
               <span className="truncate">{line.label}</span>

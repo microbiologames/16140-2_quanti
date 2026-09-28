@@ -1,0 +1,8 @@
+Kufam — SIL Open Font License, Version 1.1
+Copyright The Kufam Project Authors (https://github.com/googlefonts/kufam)
+
+Sous-ensembles latin et latin étendu, récupérés depuis Google Fonts et hébergés
+ici pour éviter une requête vers un tiers et garder l'application utilisable
+hors ligne.
+
+Texte intégral de la licence : https://openfontlicense.org

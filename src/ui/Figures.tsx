@@ -47,7 +47,7 @@ export function Figures({ figures }: { figures: Figure[] }) {
               onClick={() => setActive(index)}
               className={`rounded-lg px-2.5 py-1 text-xs ${
                 index === active
-                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                  ? 'bg-[var(--brand-strong)] text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
               }`}
             >

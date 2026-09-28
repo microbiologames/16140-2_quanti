@@ -3,8 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='14'>📊</text></svg>" />
+    <meta name="theme-color" content="#00aab6" />
+    <meta
+      name="description"
+      content="Interprétation des données brutes d'études de validation de méthode selon l'ISO 16140-2, méthodes quantitatives."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>ISO 16140-2 — Méthodes quantitatives</title>
+    <script>
+      // Résout le thème avant le premier rendu : sans cela, une page sombre
+      // s'afficherait brièvement en clair au chargement.
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('iso16140-theme')
+          var choice = stored === 'light' || stored === 'dark' ? stored : null
+          var dark = choice
+            ? choice === 'dark'
+            : window.matchMedia('(prefers-color-scheme: dark)').matches
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+          var palette = localStorage.getItem('iso16140-palette')
+          document.documentElement.dataset.palette =
+            palette === 'accessible' ? 'accessible' : 'matlab'
+        } catch (error) {
+          document.documentElement.dataset.theme = 'light'
+          document.documentElement.dataset.palette = 'matlab'
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

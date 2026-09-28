@@ -28,7 +28,7 @@ export function Dropzone() {
       onDrop={onDrop}
       className={`rounded-xl border-2 border-dashed p-8 text-center transition-colors ${
         dragging
-          ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40'
+          ? 'border-[var(--brand)] bg-[var(--brand-soft)]'
           : 'border-slate-300 dark:border-slate-700'
       }`}
     >
@@ -38,7 +38,7 @@ export function Dropzone() {
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="mt-3 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+        className="mt-3 rounded-lg bg-[var(--brand-strong)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--brand)]"
       >
         Choisir des fichiers
       </button>

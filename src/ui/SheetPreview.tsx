@@ -41,8 +41,8 @@ export function SheetPreview({ sheets }: { sheets: RawSheet[] }) {
             onClick={() => setActive(index)}
             className={`rounded-t-lg border-b-2 px-3 py-1.5 text-sm ${
               index === active
-                ? 'border-sky-600 font-medium text-sky-700 dark:text-sky-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                ? 'border-[var(--brand-strong)] font-medium text-[var(--brand-strong)]'
+                : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
             {candidate.name}
