@@ -21,9 +21,20 @@ Ce n'est pas qu'une contrainte, c'est un avantage ici :
 | État | **Zustand** | Store minimal, sans cérémonie |
 | Lecture / écriture Excel | **ExcelJS** | Lit et écrit `.xlsx`, et surtout **sait insérer des images** dans une feuille — indispensable pour exporter les figures |
 | Lecture CSV | **PapaParse** | Tolérant aux séparateurs et encodages douteux |
-| Figures | **ECharts** | Rendu canvas rapide, export PNG haute résolution (`getDataURL`), thème et couleurs pilotables à chaud |
+| Figures | **SVG écrit à la main** | Aucune dépendance, marqueurs exactement ceux de MATLAB, couleurs en variables CSS donc modifiables sans recalcul, et export PNG haute résolution par rendu sur canvas. Une bibliothèque coûtait 250 ko compressés pour des nuages de points ; la version manuscrite en coûte 3 |
 | Tests | **Vitest** | Tests numériques de non-régression vs. sorties MATLAB |
 | Calcul lourd | **Web Workers** | Un worker par fichier → le traitement par lot est réellement parallèle et l'UI reste fluide |
+
+### Note sur les couleurs
+
+La palette de l'application MATLAB est conservée par défaut, pour que les rapports déjà
+rendus restent comparables. Elle échoue toutefois aux contrôles de lisibilité : le rouge
+pur et l'olive sont à un ΔE de 1,7 en vision deutéranope, et le vert pur n'offre qu'un
+contraste de 1,34:1 sur fond clair. Une seconde palette, validée sur les six contrôles
+en clair comme en sombre, est proposée à côté.
+
+Les deux vivent en variables CSS (`--series-1` à `--series-8`), ce qui permet d'en
+changer — et bientôt de modifier une teinte à la roue — sans relancer un seul calcul.
 
 ### Note sur SheetJS
 

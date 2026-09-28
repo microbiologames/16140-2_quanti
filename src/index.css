@@ -20,3 +20,75 @@ body {
   font-variant-numeric: tabular-nums;
   @apply text-right font-mono;
 }
+
+/* ---------------------------------------------------------------- palettes */
+
+/*
+ * Palette « MATLAB » : les teintes de l'application d'origine, à l'identique, y
+ * compris en mode sombre — c'est leur fidélité qui fait leur intérêt.
+ */
+:root,
+:root[data-palette='matlab'] {
+  --series-1: #5472ae;
+  --series-2: #a42424;
+  --series-3: #708d23;
+  --series-4: #ff33ff;
+  --series-5: #999900;
+  --series-6: #ff0000;
+  --series-7: #00ff00;
+  --series-8: #0000ff;
+  --series-case2: #e67e30;
+  --series-case3: #ffff00;
+}
+
+/* Palette « Accessible » : validée sur les six contrôles, en clair comme en sombre. */
+:root[data-palette='accessible'] {
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+  --series-case2: #8a6d3b;
+  --series-case3: #6b7280;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='accessible'] {
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+    --series-case2: #b99054;
+    --series-case3: #9ca3af;
+  }
+}
+
+/* Encres et surfaces des figures, pour que le SVG suive le thème de la page. */
+:root {
+  --chart-surface: #fcfcfb;
+  --chart-grid: #e7e5e4;
+  --chart-axis: #a8a29e;
+  --chart-ink: #44403c;
+  --chart-line-identity: #0b0b0b;
+  --chart-line-bias: #0ca30c;
+  --chart-line-limit: #d03b3b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --chart-surface: #1a1a19;
+    --chart-grid: #2f2f2d;
+    --chart-axis: #57534e;
+    --chart-ink: #d6d3d1;
+    --chart-line-identity: #e7e5e4;
+    --chart-line-bias: #22c55e;
+    --chart-line-limit: #f87171;
+  }
+}

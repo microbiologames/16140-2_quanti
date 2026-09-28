@@ -1,20 +1,22 @@
 import { useState } from 'react'
 import { Diagnostics } from '@/ui/Diagnostics'
 import { Dropzone } from '@/ui/Dropzone'
+import { Figures } from '@/ui/Figures'
 import { JobList } from '@/ui/JobList'
 import { ResultTables } from '@/ui/ResultTables'
 import { SheetPreview } from '@/ui/SheetPreview'
 import { Summary } from '@/ui/Summary'
+import { buildFigures } from '@/core/figures'
 import { useAppStore, useSelectedJob } from '@/state/store'
 
-const VIEWS = ['Résultats', 'Diagnostics', 'Fichier lu'] as const
+const VIEWS = ['Tableaux', 'Figures', 'Diagnostics', 'Fichier lu'] as const
 type View = (typeof VIEWS)[number]
 
 export default function App() {
   const jobs = useAppStore((state) => state.jobs)
   const clear = useAppStore((state) => state.clear)
   const job = useSelectedJob()
-  const [view, setView] = useState<View>('Résultats')
+  const [view, setView] = useState<View>('Tableaux')
 
   const diagnostics = job?.analysis?.diagnostics ?? job?.workbook?.diagnostics ?? []
   const errors = diagnostics.filter((diagnostic) => diagnostic.severity === 'error').length
@@ -54,9 +56,9 @@ export default function App() {
             <div className="rounded-xl border border-slate-200 p-8 text-sm text-slate-500 dark:border-slate-800">
               <p className="font-medium text-slate-700 dark:text-slate-300">Aucun fichier chargé.</p>
               <p className="mt-2">
-                Déposer un ou plusieurs classeurs d'entrée. Les six tableaux de l'étude sont
-                calculés à la volée et affichés ici. Les figures et l'export Excel arrivent
-                dans une prochaine étape.
+                Déposer un ou plusieurs classeurs d'entrée. Les tableaux et les figures de
+                l'étude sont calculés à la volée et affichés ici. L'export Excel arrive dans
+                une prochaine étape.
               </p>
             </div>
           )}
@@ -100,7 +102,8 @@ export default function App() {
                 ))}
               </div>
 
-              {view === 'Résultats' && <ResultTables tables={job.analysis.tables} />}
+              {view === 'Tableaux' && <ResultTables tables={job.analysis.tables} />}
+              {view === 'Figures' && <Figures figures={buildFigures(job.analysis)} />}
               {view === 'Diagnostics' && <Diagnostics diagnostics={diagnostics} />}
               {view === 'Fichier lu' && job.workbook && <SheetPreview sheets={job.workbook.sheets} />}
             </>

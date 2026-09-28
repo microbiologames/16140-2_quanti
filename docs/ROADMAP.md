@@ -27,18 +27,21 @@ dépôt privé de références en place ([`REFERENCES.md`](REFERENCES.md)).
   manuel non reproductible.
 - 119 tests unitaires, valeurs attendues calculées indépendamment sous SciPy.
 
-## Étape 4 — Prévisualisation ⬅️ *en cours*
-- ✅ Tableaux à l'écran, organisés comme les onglets du futur classeur.
-- ✅ Traitement par lot : file d'attente, fichiers lus et analysés en parallèle.
-- Figures : nuages par catégorie et toutes catégories, Bland-Altman global et
-  par catégorie.
-- Calculs en Web Workers si le volume l'exige — 2 fichiers de 214 échantillons
-  prennent aujourd'hui 0,6 s au total, le besoin n'est pas établi.
+## Étape 4 — Prévisualisation ✅
+- Tableaux à l'écran, organisés comme les onglets du futur classeur.
+- Traitement par lot : file d'attente, fichiers lus et analysés en parallèle.
+- Les quatre familles de figures, en SVG : nuages par catégorie et toutes
+  catégories, Bland-Altman global et par catégorie, avec les marqueurs et les
+  couleurs de l'application d'origine, biais et limites tracés, infobulle par point.
+- Web Workers : non nécessaires pour l'instant — 2 fichiers de 214 échantillons
+  sont lus, analysés et tracés en 0,6 s.
 
-## Étape 5 — Personnalisation
+## Étape 5 — Personnalisation ⬅️ *en cours*
+- ✅ Choix entre la palette de l'application d'origine et une palette validée
+  pour la vision des couleurs déficiente, mémorisé d'une session à l'autre.
 - Édition des libellés (catégories, types, titres d'axes).
-- Sélecteur de couleurs par série.
-- Réglages persistés localement et exportables en preset d'équipe.
+- Sélecteur de couleur par série, à la roue.
+- Réglages exportables en preset d'équipe.
 
 ## Étape 6 — Export
 - Classeur `.xlsx` : un onglet par bloc, mise en forme, figures en PNG haute résolution.
