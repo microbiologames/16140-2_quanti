@@ -1,3 +1,5 @@
+import type { AnalysisResult } from './analysis'
+
 /** Types métier partagés par la lecture, le calcul et le rendu. */
 
 export type Severity = 'error' | 'warning' | 'info'
@@ -37,7 +39,7 @@ export interface RawWorkbook {
 }
 
 /** Où en est un fichier dans la file de traitement. */
-export type JobStatus = 'queued' | 'reading' | 'ready' | 'failed'
+export type JobStatus = 'queued' | 'reading' | 'analysing' | 'ready' | 'failed'
 
 export interface Job {
   id: string
@@ -45,6 +47,7 @@ export interface Job {
   sizeBytes: number
   status: JobStatus
   workbook?: RawWorkbook
+  analysis?: AnalysisResult
   /** Message d'échec quand `status` vaut `failed`. */
   error?: string
 }

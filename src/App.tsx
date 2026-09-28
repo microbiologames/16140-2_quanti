@@ -1,13 +1,23 @@
+import { useState } from 'react'
 import { Diagnostics } from '@/ui/Diagnostics'
 import { Dropzone } from '@/ui/Dropzone'
 import { JobList } from '@/ui/JobList'
+import { ResultTables } from '@/ui/ResultTables'
 import { SheetPreview } from '@/ui/SheetPreview'
+import { Summary } from '@/ui/Summary'
 import { useAppStore, useSelectedJob } from '@/state/store'
+
+const VIEWS = ['Résultats', 'Diagnostics', 'Fichier lu'] as const
+type View = (typeof VIEWS)[number]
 
 export default function App() {
   const jobs = useAppStore((state) => state.jobs)
   const clear = useAppStore((state) => state.clear)
   const job = useSelectedJob()
+  const [view, setView] = useState<View>('Résultats')
+
+  const diagnostics = job?.analysis?.diagnostics ?? job?.workbook?.diagnostics ?? []
+  const errors = diagnostics.filter((diagnostic) => diagnostic.severity === 'error').length
 
   return (
     <div className="mx-auto flex h-full max-w-7xl flex-col gap-6 p-4 sm:p-6">
@@ -39,17 +49,14 @@ export default function App() {
           )}
         </aside>
 
-        <main className="min-w-0">
+        <main className="min-w-0 space-y-4">
           {!job && (
             <div className="rounded-xl border border-slate-200 p-8 text-sm text-slate-500 dark:border-slate-800">
-              <p className="font-medium text-slate-700 dark:text-slate-300">
-                Aucun fichier chargé.
-              </p>
+              <p className="font-medium text-slate-700 dark:text-slate-300">Aucun fichier chargé.</p>
               <p className="mt-2">
-                Déposer un ou plusieurs fichiers pour en vérifier la lecture. L'application est au
-                stade d'amorçage : elle lit les fichiers et signale ce qu'elle n'a pas compris. Les
-                blocs d'analyse ISO 16140-2 seront ajoutés une fois l'application MATLAB de
-                référence portée.
+                Déposer un ou plusieurs classeurs d'entrée. Les six tableaux de l'étude sont
+                calculés à la volée et affichés ici. Les figures et l'export Excel arrivent
+                dans une prochaine étape.
               </p>
             </div>
           )}
@@ -61,17 +68,42 @@ export default function App() {
             </div>
           )}
 
-          {job?.workbook && (
-            <div className="space-y-6">
-              <section className="space-y-2">
-                <h2 className="text-sm font-medium">Diagnostics de lecture</h2>
-                <Diagnostics diagnostics={job.workbook.diagnostics} />
-              </section>
-              <section className="space-y-2">
-                <h2 className="text-sm font-medium">Contenu lu</h2>
-                <SheetPreview sheets={job.workbook.sheets} />
-              </section>
-            </div>
+          {job?.analysis && (
+            <>
+              <Summary result={job.analysis} />
+
+              <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800">
+                {VIEWS.map((candidate) => (
+                  <button
+                    key={candidate}
+                    type="button"
+                    onClick={() => setView(candidate)}
+                    className={`-mb-px border-b-2 px-3 py-1.5 text-sm ${
+                      candidate === view
+                        ? 'border-slate-900 font-medium dark:border-slate-100'
+                        : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {candidate}
+                    {candidate === 'Diagnostics' && diagnostics.length > 0 && (
+                      <span
+                        className={`ml-1.5 rounded px-1.5 py-0.5 text-xs ${
+                          errors > 0
+                            ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                        }`}
+                      >
+                        {diagnostics.length}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {view === 'Résultats' && <ResultTables tables={job.analysis.tables} />}
+              {view === 'Diagnostics' && <Diagnostics diagnostics={diagnostics} />}
+              {view === 'Fichier lu' && job.workbook && <SheetPreview sheets={job.workbook.sheets} />}
+            </>
           )}
         </main>
       </div>

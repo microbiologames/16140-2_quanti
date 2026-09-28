@@ -14,20 +14,26 @@ dépôt privé de références en place ([`REFERENCES.md`](REFERENCES.md)).
 - Parité vérifiée numériquement sur les sorties réelles — écart maximal 1,6 × 10⁻¹⁵.
 - Tolérances du lecteur spécifiées dans [`INPUT_FORMAT.md`](INPUT_FORMAT.md).
 
-## Étape 2 — Lecture et validation des entrées ⬅️ *en cours*
+## Étape 2 — Lecture et validation des entrées ✅
 - Reconnaissance des onglets `Data` et `Classification`, repérage des colonnes par
   en-tête plutôt que par position.
 - Classement en cas 1 à 4 et valeurs corrigées, conformes à `MATLAB_PARITY.md`.
 - Normalisations et diagnostics selon `INPUT_FORMAT.md`.
 
-## Étape 3 — Moteur de calcul
-- Un module par bloc d'analyse, porté depuis MATLAB.
-- **Tests de non-régression** : pour chaque fichier d'entrée de référence, comparaison
-  numérique avec la sortie MATLAB correspondante. C'est le critère de « même fonctionnalité ».
+## Étape 3 — Moteur de calcul ✅
+- Statistiques et six tableaux portés depuis la v5.1.
+- **Parité vérifiée cellule par cellule** sur les classeurs réels : 8 sur 8 conformes
+  (`npm run parity`). Seuls subsistent trois intitulés corrigés et un renommage
+  manuel non reproductible.
+- 119 tests unitaires, valeurs attendues calculées indépendamment sous SciPy.
 
-## Étape 4 — Prévisualisation
-- Tableaux et figures à l'écran, organisés comme les onglets du futur classeur.
-- Traitement par lot : file d'attente de fichiers, un worker chacun, navigation entre résultats.
+## Étape 4 — Prévisualisation ⬅️ *en cours*
+- ✅ Tableaux à l'écran, organisés comme les onglets du futur classeur.
+- ✅ Traitement par lot : file d'attente, fichiers lus et analysés en parallèle.
+- Figures : nuages par catégorie et toutes catégories, Bland-Altman global et
+  par catégorie.
+- Calculs en Web Workers si le volume l'exige — 2 fichiers de 214 échantillons
+  prennent aujourd'hui 0,6 s au total, le besoin n'est pas établi.
 
 ## Étape 5 — Personnalisation
 - Édition des libellés (catégories, types, titres d'axes).

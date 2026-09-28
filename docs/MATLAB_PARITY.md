@@ -11,7 +11,7 @@ l'application web : l'objectif est la parité avec l'existant.
 | Version | Dernière modif. | Rôle |
 |---|---|---|
 | v4 | 2022-12-08 | ancêtre commun |
-| v3_majAmd | 2025-03-27 | **branche d'essai** de l'amendement ISO — abandonnée |
+| v3_majAmd | 2025-03-27 | **branche d'essai** de l'amendement ISO 16140-2:2016/A1:2024 — abandonnée |
 | v5 | 2025-08-27 | ajoute les Bland-Altman par catégorie et les limites d'axe manuelles |
 | **v5.1** | **2025-08-28** | **référence** |
 
@@ -196,22 +196,32 @@ choix et non une surprise.
 
 ## Vérification
 
-Le classement en cas, les grandeurs dérivées et le `Tableau 4` ont été réimplémentés
-indépendamment, puis comparés aux sorties Excel produites par l'application MATLAB.
+### Parité établie sur les données réelles
 
-**Écart maximal : 1,6 × 10⁻¹⁵** — la précision de la double précision flottante, sur
-l'ensemble des lignes du `Tableau 4` (six catégories plus le total).
+`npm run parity -- <dépôt de références>` rejoue chaque fichier d'entrée à travers
+l'application et compare les six tableaux produits, **cellule par cellule**, au classeur
+correspondant produit par l'application MATLAB.
 
-La même vérification appliquée aux sorties de mars 2025 les identifie sans ambiguïté
-comme produites avec la formule de l'amendement, ce qui les écarte du jeu de référence.
-Le détail figure dans le dépôt privé (`03_sorties-excel/ANALYSE_APPARIEMENT.md`).
+**Résultat : 8 classeurs sur 8 conformes** — tolérance relative 10⁻⁹, jamais atteinte.
 
-## Stratégie de non-régression
+Les seuls écarts restants ne sont pas numériques :
 
-Les données de validation ne pouvant pas figurer dans ce dépôt public, la vérification
-se fait à deux niveaux :
+- trois **intitulés de colonnes** dont les coquilles sont corrigées ici
+  (« buy both methods », « NUmber ») ;
+- six cellules portant le nom d'une catégorie **renommée à la main dans l'interface** au
+  moment d'une exécution d'août 2025. Le fichier d'entrée porte toujours le nom
+  d'origine : l'écart n'est pas reproductible, et n'a pas à l'être.
+
+Six autres classeurs sont écartés du contrôle — ceux de mars 2025, produits avec la
+formule de l'amendement — ainsi que deux classeurs incomplets, issus d'exécutions
+interrompues. Le détail de l'appariement figure dans le dépôt privé
+(`03_sorties-excel/ANALYSE_APPARIEMENT.md`).
+
+### Deux niveaux de contrôle
+
+Les données de validation ne pouvant pas figurer dans ce dépôt public :
 
 - **En intégration continue** : jeux de données **synthétiques** couvrant tous les cas,
-  avec valeurs attendues calculées indépendamment. Exécutés à chaque modification.
-- **Hors intégration continue** : script de comparaison exécuté sur le dépôt privé, qui
-  rejoue les fichiers réels et compare cellule à cellule aux sorties MATLAB d'août 2025.
+  valeurs attendues calculées indépendamment sous SciPy. Exécutés à chaque modification.
+- **Hors intégration continue** : le script `scripts/parity-check.ts` ci-dessus, lancé
+  à la main contre le dépôt privé.

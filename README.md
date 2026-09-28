@@ -11,9 +11,9 @@ Elle remplace une application MATLAB existante, avec les mêmes calculs mais :
 - **Personnalisation** — libellés de catégories/types éditables, couleurs choisies à la roue.
 - **Export Excel** — un classeur `.xlsx` avec un onglet par bloc de résultats, figures incluses.
 
-> Statut : **portage en cours**. Squelette, déploiement et spécification de parité en place.
-> Le moteur de calcul est en cours de portage depuis l'application MATLAB de référence
-> (voir [`docs/REFERENCES.md`](docs/REFERENCES.md)).
+> Statut : **moteur de calcul opérationnel**. Les six tableaux de l'étude sont produits
+> et leur parité avec l'application MATLAB est vérifiée cellule par cellule sur les
+> classeurs réels — 8 sur 8 conformes. Restent à faire les figures et l'export Excel.
 
 ## Démarrer en local
 
@@ -22,6 +22,12 @@ npm install
 npm run dev          # http://localhost:5173
 npm test             # tests unitaires (Vitest)
 npm run build        # build de production dans dist/
+```
+
+Contrôle de parité avec l'application MATLAB, contre le dépôt privé de références :
+
+```bash
+npm run parity -- /chemin/vers/temp_ISO16140-2-validation-private-references
 ```
 
 ## Déploiement

@@ -4,13 +4,15 @@ import { useAppStore } from '@/state/store'
 const STATUS_LABEL: Record<JobStatus, string> = {
   queued: 'en attente',
   reading: 'lecture…',
-  ready: 'lu',
+  analysing: 'calcul…',
+  ready: 'analysé',
   failed: 'échec',
 }
 
 const STATUS_STYLE: Record<JobStatus, string> = {
   queued: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
   reading: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+  analysing: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
   ready: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
   failed: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300',
 }

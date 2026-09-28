@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { analyse } from '@/core/analysis'
+import { buildDataset } from '@/core/dataset'
 import { readWorkbook } from '@/io/readWorkbook'
 import type { Job } from '@/core/types'
 
@@ -35,7 +37,11 @@ export const useAppStore = create<AppState>((set) => ({
       const id = jobs[index]!.id
       patch(set, id, { status: 'reading' })
       readWorkbook(file)
-        .then((workbook) => patch(set, id, { status: 'ready', workbook }))
+        .then((workbook) => {
+          patch(set, id, { status: 'analysing', workbook })
+          const analysis = analyse(buildDataset(workbook))
+          patch(set, id, { status: 'ready', analysis })
+        })
         .catch((cause: unknown) =>
           patch(set, id, {
             status: 'failed',

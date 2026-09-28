@@ -1,4 +1,4 @@
-import type ExcelJS from 'exceljs'
+import type * as ExcelJS from 'exceljs'
 import Papa from 'papaparse'
 import type { CellValue, Diagnostic, RawSheet, RawWorkbook } from '@/core/types'
 
@@ -29,8 +29,10 @@ export async function readWorkbook(file: File): Promise<RawWorkbook> {
 
 async function readXlsx(file: File, diagnostics: Diagnostic[]): Promise<RawSheet[]> {
   // Chargé à la demande : ExcelJS pèse l'essentiel du poids de l'application et
-  // n'est utile qu'une fois un fichier déposé.
-  const { Workbook } = await import('exceljs')
+  // n'est utile qu'une fois un fichier déposé. `default` plutôt que l'export nommé :
+  // le paquet est en CommonJS, et Node ne sait pas toujours en extraire les noms.
+  const imported = await import('exceljs')
+  const { Workbook } = (imported.default ?? imported) as typeof ExcelJS
   const workbook = new Workbook()
   await workbook.xlsx.load(await file.arrayBuffer())
 
