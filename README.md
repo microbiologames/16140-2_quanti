@@ -11,8 +11,8 @@ Elle remplace une application MATLAB existante, avec les mêmes calculs mais :
 - **Personnalisation** — libellés de catégories/types éditables, couleurs choisies à la roue.
 - **Export Excel** — un classeur `.xlsx` avec un onglet par bloc de résultats, figures incluses.
 
-> Statut : **amorçage**. Le squelette applicatif et la chaîne de déploiement sont en place.
-> Le moteur de calcul sera porté depuis l'application MATLAB de référence
+> Statut : **portage en cours**. Squelette, déploiement et spécification de parité en place.
+> Le moteur de calcul est en cours de portage depuis l'application MATLAB de référence
 > (voir [`docs/REFERENCES.md`](docs/REFERENCES.md)).
 
 ## Démarrer en local
@@ -39,5 +39,6 @@ URL une fois activé : `https://microbiologames.github.io/16140-2_quanti/`
 |---|---|
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Choix techniques et structure du code |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Étapes de développement |
-| [`docs/INPUT_FORMAT.md`](docs/INPUT_FORMAT.md) | Spécification du fichier d'entrée (à compléter) |
+| [`docs/MATLAB_PARITY.md`](docs/MATLAB_PARITY.md) | L'algorithme à reproduire, et la vérification de parité |
+| [`docs/INPUT_FORMAT.md`](docs/INPUT_FORMAT.md) | Format d'entrée et tolérances du lecteur |
 | [`docs/REFERENCES.md`](docs/REFERENCES.md) | Où vivent les fichiers de référence, et pourquoi ailleurs |

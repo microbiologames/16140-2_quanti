@@ -4,17 +4,21 @@
 Squelette applicatif, chaîne de build, déploiement GitHub Pages, socle statistique testé,
 dépôt privé de références en place ([`REFERENCES.md`](REFERENCES.md)).
 
-## Étape 1 — Rétro-ingénierie de l'application MATLAB ⬅️ *bloqué : en attente des fichiers*
-- Extraire et lire le source du `.mlapp` / des `.m`.
-- Cartographier : quels blocs d'analyse, quelles formules, quelles règles d'acceptabilité,
-  quelles figures, quelle organisation des onglets de sortie.
-- Rédiger `docs/INPUT_FORMAT.md` et `docs/MATLAB_PARITY.md` (correspondance fonction par fonction).
+## Étape 1 — Rétro-ingénierie de l'application MATLAB ✅
+- Source extrait des quatre `.mlapp`, chronologie des versions reconstituée,
+  v5.1 identifiée comme référence (v5 et v5.1 sont numériquement identiques).
+- Algorithme cartographié dans [`MATLAB_PARITY.md`](MATLAB_PARITY.md) : classement en
+  cas, grandeurs dérivées, statistiques, six familles de figures, six tableaux.
+- Formule des limites tranchée : intervalle de prédiction, pas l'intervalle de
+  confiance de l'amendement abandonné.
+- Parité vérifiée numériquement sur les sorties réelles — écart maximal 1,6 × 10⁻¹⁵.
+- Tolérances du lecteur spécifiées dans [`INPUT_FORMAT.md`](INPUT_FORMAT.md).
 
-## Étape 2 — Lecture et validation des entrées
-- Parseur tolérant : virgule décimale, cellules fusionnées, espaces insécables,
-  colonnes déplacées, onglets renommés, valeurs censurées (`<10`, `>300`), lignes vides.
-- Rapport de diagnostic : ce qui est bloquant, ce qui est corrigé automatiquement (et comment),
-  ce qui mérite un coup d'œil.
+## Étape 2 — Lecture et validation des entrées ⬅️ *en cours*
+- Reconnaissance des onglets `Data` et `Classification`, repérage des colonnes par
+  en-tête plutôt que par position.
+- Classement en cas 1 à 4 et valeurs corrigées, conformes à `MATLAB_PARITY.md`.
+- Normalisations et diagnostics selon `INPUT_FORMAT.md`.
 
 ## Étape 3 — Moteur de calcul
 - Un module par bloc d'analyse, porté depuis MATLAB.
