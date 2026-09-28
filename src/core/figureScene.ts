@@ -1,4 +1,4 @@
-import { niceTicks } from '@/ui/markers'
+import { niceTicks } from './markers'
 import type { Figure, LineRole, MarkerShape } from './figures'
 
 /**

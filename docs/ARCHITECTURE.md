@@ -79,6 +79,27 @@ au reste. Les modules à porter seront déterminés par lecture du code MATLAB
 (a priori : étude de linéarité, justesse relative, profil d'exactitude, étude
 interlaboratoires — **à confirmer**).
 
+## L'export du classeur
+
+Une figure est décrite par une **scène** (`src/core/figureScene.ts`) : des positions, des
+formes et des rôles de couleur, sans un pixel ni une teinte. Deux moteurs la consomment —
+l'affichage à l'écran, en JSX avec des variables CSS, et l'export, en SVG autonome avec
+des couleurs résolues. Le tracé est donc le même des deux côtés par construction, et non
+par vigilance.
+
+À l'export, ce SVG est rendu sur un canvas à deux fois sa taille, puis inséré en PNG dans
+le classeur. L'application d'origine y mettait des métafichiers Windows, invisibles sur
+Mac et dans les visionneuses web.
+
+L'ordre des feuilles change : les six tableaux d'abord, les figures ensuite. C'est le seul
+écart assumé avec la sortie MATLAB, qui plaçait les figures en tête — l'ordre ne porte
+aucun résultat, et ce sont les tableaux qu'on consulte. Les noms de feuilles, eux, sont
+inchangés.
+
+Un lot se télécharge en une archive `.zip` : quatorze téléchargements successifs finissent
+par être bloqués par les navigateurs. Les `.xlsx` étant déjà compressés, l'archive les
+stocke tels quels.
+
 ## Séparation calcul / présentation
 
 Un module renvoie des **données** (nombres, séries, verdicts), jamais du rendu.

@@ -11,9 +11,9 @@ Elle remplace une application MATLAB existante, avec les mêmes calculs mais :
 - **Personnalisation** — libellés de catégories/types éditables, couleurs choisies à la roue.
 - **Export Excel** — un classeur `.xlsx` avec un onglet par bloc de résultats, figures incluses.
 
-> Statut : **moteur de calcul opérationnel**. Les six tableaux de l'étude sont produits
-> et leur parité avec l'application MATLAB est vérifiée cellule par cellule sur les
-> classeurs réels — 8 sur 8 conformes. Restent à faire les figures et l'export Excel.
+> Statut : **chaîne complète**. Lecture, calcul, tableaux, figures et export Excel.
+> La parité avec l'application MATLAB est vérifiée cellule par cellule sur les
+> classeurs réels — 8 sur 8 conformes.
 
 ## Démarrer en local
 

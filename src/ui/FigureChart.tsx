@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cssPaint, colorOf } from './palette'
-import { markerPath } from './markers'
+import { markerPath } from '@/core/markers'
 import { buildScene, type SceneElement, type SceneLine, type SceneMarker } from '@/core/figureScene'
 import type { Figure, FigurePoint, FigureSeries } from '@/core/figures'
 

@@ -56,6 +56,24 @@ export const EXPORT_INK = {
   limit: '#d03b3b',
 } as const
 
+export const PALETTE_STORAGE_KEY = 'iso16140-palette'
+
+/** Palette retenue, telle que l'a fixée le script d'amorçage de `index.html`. */
+export function readPalette(): PaletteId {
+  const current = document.documentElement.dataset['palette']
+  return current === 'accessible' ? 'accessible' : 'matlab'
+}
+
+/** Applique une palette : un attribut sur `<html>`, donc aucun recalcul. */
+export function writePalette(id: PaletteId): void {
+  document.documentElement.dataset['palette'] = id
+  try {
+    localStorage.setItem(PALETTE_STORAGE_KEY, id)
+  } catch {
+    // Sans persistance, le choix vaut pour la session.
+  }
+}
+
 /** Nom de la variable CSS portant la couleur d'une série. */
 export function colorVariable(role: ColorRole): string {
   if (role.kind === 'case2') return '--series-case2'

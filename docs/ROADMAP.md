@@ -37,15 +37,20 @@ dépôt privé de références en place ([`REFERENCES.md`](REFERENCES.md)).
   sont lus, analysés et tracés en 0,6 s.
 
 ## Étape 5 — Personnalisation ⬅️ *en cours*
+- ✅ Habillage aux couleurs ADRIA, Kufam et Arial, logotype discret.
+- ✅ Bascule clair / sombre / système, mémorisée.
 - ✅ Choix entre la palette de l'application d'origine et une palette validée
-  pour la vision des couleurs déficiente, mémorisé d'une session à l'autre.
+  pour la vision des couleurs déficiente, mémorisé et repris à l'export.
 - Édition des libellés (catégories, types, titres d'axes).
 - Sélecteur de couleur par série, à la roue.
 - Réglages exportables en preset d'équipe.
 
-## Étape 6 — Export
-- Classeur `.xlsx` : un onglet par bloc, mise en forme, figures en PNG haute résolution.
-- Export du lot complet (un classeur par fichier, ou un classeur consolidé — à décider).
+## Étape 6 — Export ✅
+- Classeur `.xlsx` : les six tableaux mis en forme, puis les quatorze figures en
+  PNG à deux fois la résolution d'écran — lisibles partout, contrairement aux
+  métafichiers Windows de l'application d'origine.
+- Lot complet en une archive `.zip`, un classeur par fichier d'entrée.
+- Un classeur de 214 échantillons, 6 tableaux et 14 figures : 1,2 s.
 
 ## Plus tard, éventuellement
 - Accès restreint à l'équipe (Pages est public par défaut).

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Diagnostics } from '@/ui/Diagnostics'
 import { Dropzone } from '@/ui/Dropzone'
+import { ExportButtons } from '@/ui/ExportButtons'
 import { Figures } from '@/ui/Figures'
 import { JobList } from '@/ui/JobList'
 import { ResultTables } from '@/ui/ResultTables'
@@ -85,6 +86,7 @@ export default function App() {
           {job?.analysis && (
             <>
               <Summary result={job.analysis} />
+              <ExportButtons jobs={jobs} current={job} />
 
               <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800">
                 {VIEWS.map((candidate) => (

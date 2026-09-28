@@ -1,38 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { FigureChart } from './FigureChart'
-import { PALETTES, type PaletteId } from './palette'
+import { PALETTES, readPalette, writePalette, type PaletteId } from './palette'
 import type { Figure } from '@/core/figures'
-
-const STORAGE_KEY = 'iso16140-palette'
-
-/** La palette vit en attribut sur `<html>` : la changer ne relance aucun calcul. */
-function usePalette(): [PaletteId, (id: PaletteId) => void] {
-  const [palette, setPalette] = useState<PaletteId>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored === 'matlab' || stored === 'accessible') return stored
-    } catch {
-      // Navigation privée ou stockage bloqué : le défaut fera l'affaire.
-    }
-    return 'matlab'
-  })
-
-  useEffect(() => {
-    document.documentElement.dataset['palette'] = palette
-    try {
-      localStorage.setItem(STORAGE_KEY, palette)
-    } catch {
-      // Sans persistance, le choix vaut pour la session.
-    }
-  }, [palette])
-
-  return [palette, setPalette]
-}
 
 export function Figures({ figures }: { figures: Figure[] }) {
   const [active, setActive] = useState(0)
-  const [palette, setPalette] = usePalette()
+  const [palette, setPalette] = useState<PaletteId>(readPalette)
   const figure = figures[Math.min(active, figures.length - 1)]
+
+  const choose = (id: PaletteId) => {
+    writePalette(id)
+    setPalette(id)
+  }
 
   if (!figure) return <p className="text-sm text-slate-500">Aucune figure à afficher.</p>
 
@@ -45,7 +24,7 @@ export function Figures({ figures }: { figures: Figure[] }) {
               key={candidate.sheetName}
               type="button"
               onClick={() => setActive(index)}
-              className={`rounded-lg px-2.5 py-1 text-xs ${
+              className={`rounded-lg px-2.5 py-1 text-xs transition-colors ${
                 index === active
                   ? 'bg-[var(--brand-strong)] text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
@@ -60,7 +39,7 @@ export function Figures({ figures }: { figures: Figure[] }) {
           Couleurs
           <select
             value={palette}
-            onChange={(event) => setPalette(event.target.value as PaletteId)}
+            onChange={(event) => choose(event.target.value as PaletteId)}
             className="rounded-lg border border-slate-300 bg-transparent px-2 py-1 dark:border-slate-700"
           >
             {PALETTES.map((choice) => (
