@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -b --noEmit",
-    "parity": "esbuild scripts/parity-check.ts --bundle --platform=node --format=esm --target=node22 --packages=external --alias:@=./src --outfile=node_modules/.cache/parity.mjs --log-level=warning && node node_modules/.cache/parity.mjs"
+    "parity": "esbuild scripts/parity-check.ts --bundle --platform=node --format=esm --target=node22 --packages=external --alias:@=./src --outfile=node_modules/.cache/parity.mjs --log-level=warning && node node_modules/.cache/parity.mjs",
+    "build:standalone": "STANDALONE=1 vite build && esbuild scripts/build-standalone.ts --bundle --platform=node --format=esm --target=node22 --packages=external --alias:@=./src --outfile=node_modules/.cache/standalone.mjs --log-level=warning && node node_modules/.cache/standalone.mjs"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

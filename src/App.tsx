@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import adriaLogo from './assets/adria.svg'
 import { Diagnostics } from '@/ui/Diagnostics'
 import { Dropzone } from '@/ui/Dropzone'
 import { ExportButtons } from '@/ui/ExportButtons'
 import { Figures } from '@/ui/Figures'
+import { Footer } from '@/ui/Footer'
 import { JobList } from '@/ui/JobList'
 import { LocaleToggle } from '@/ui/LocaleToggle'
 import { ResultTables } from '@/ui/ResultTables'
@@ -41,7 +43,7 @@ export default function App() {
           </div>
           <ThemeToggle />
           <img
-            src={`${import.meta.env.BASE_URL}adria.svg`}
+            src={adriaLogo}
             alt="ADRIA"
             width={585}
             height={91}
@@ -129,6 +131,8 @@ export default function App() {
           )}
         </main>
       </div>
+
+      <Footer />
     </div>
   )
 }

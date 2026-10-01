@@ -137,6 +137,36 @@ Deux contraintes ont guidé l'écriture :
   que par une formule matricielle, qui demanderait en plus une validation par
   Ctrl+Maj+Entrée sur les versions anciennes.
 
+## La version hors ligne
+
+Une conséquence directe du choix d'origine : puisque l'application ne contacte aucun
+serveur, il suffit de replier ses fichiers en un seul pour qu'elle devienne portable.
+
+`npm run build:standalone` enchaîne deux étapes :
+
+1. **Une construction dédiée** (`STANDALONE=1`) : chemins relatifs, `assetsInlineLimit`
+   sans limite — polices et logotype deviennent des data-URI — et désactivation du
+   découpage en morceaux, pour qu'ExcelJS, chargé à la demande en ligne, se retrouve
+   dans le même module.
+2. **Un script de repli** (`scripts/build-standalone.ts`) qui insère la feuille de style,
+   le module et l'icône dans la page.
+
+Deux pièges s'y cachaient :
+
+- **`String.replace` interprète `$&`, `` $` `` et `$'` dans la chaîne de remplacement.**
+  Un bundle JavaScript en contient à foison : la page se recopiait par morceaux. Le
+  script passe donc par une fonction de remplacement.
+- **Une fin de balise dans le code refermerait l'élément qui le porte.** Les occurrences
+  de `</script` et `</style>` sont échappées avant insertion.
+
+Le script refuse de produire un fichier qui garderait une référence externe, et vérifie
+que le nom haché de chaque ressource a bien disparu de la page.
+
+Le rendu des figures passe par un canvas, ce qui aurait pu achopper sur l'origine opaque
+d'une page `file://` — une image dessinée depuis une autre origine « souille » le canvas
+et interdit sa lecture. Le contrôle de bout en bout confirme que ce n'est pas le cas ici,
+l'image venant d'un `blob:` de la page elle-même.
+
 ## Séparation calcul / présentation
 
 Un module renvoie des **données** (nombres, séries, verdicts), jamais du rendu.

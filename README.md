@@ -33,6 +33,28 @@ Contrôle de parité avec l'application MATLAB, contre le dépôt privé de réf
 npm run parity -- /chemin/vers/temp_ISO16140-2-validation-private-references
 ```
 
+## Version hors ligne
+
+L'application ne fait **aucun appel réseau** : lecture des fichiers, calculs, figures et
+export ont tous lieu dans le navigateur. Elle tient donc dans un fichier HTML unique,
+d'environ 1,3 Mo, que l'on ouvre d'un double-clic sans rien installer.
+
+Le lien de téléchargement est en bas de l'application en ligne, ou en construction locale :
+
+```bash
+npm run build:standalone    # produit dist-standalone/ISO16140-2-quanti.html
+```
+
+Tout y fonctionne à l'identique — le fichier est d'ailleurs vérifié de bout en bout en
+`file://`, export Excel compris. Trois choses à savoir :
+
+- **Elle ne se met pas à jour toute seule.** Le pied de page affiche sa date de
+  construction, et renvoie vers la version en ligne.
+- **Les préférences** (thème, palette, langue) sont mémorisées par le navigateur et
+  peuvent ne pas l'être pour un fichier local, selon sa configuration. L'application
+  fonctionne sans.
+- **Elle se partage comme un fichier** : copie sur un disque réseau, pièce jointe, clé USB.
+
 ## Déploiement
 
 Chaque push sur `main` déclenche le workflow [`deploy.yml`](.github/workflows/deploy.yml)

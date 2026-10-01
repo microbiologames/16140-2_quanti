@@ -9,3 +9,4 @@ coverage/
 *.tsbuildinfo
 e2e.local.mjs
 probe*.ts
+dist-standalone/

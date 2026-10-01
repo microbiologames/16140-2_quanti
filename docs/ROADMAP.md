@@ -55,6 +55,13 @@ dépôt privé de références en place ([`REFERENCES.md`](REFERENCES.md)).
 - Lot complet en une archive `.zip`, un classeur par fichier d'entrée.
 - Un classeur de 214 échantillons, 6 tableaux et 14 figures : 1,2 s.
 
+## Étape 7 — Version hors ligne ✅
+- Fichier HTML unique d'environ 1,3 Mo, sans aucune ressource externe : polices,
+  logotype, feuille de style et code y sont intégrés.
+- Construit en intégration continue et publié à côté du site ; le lien figure
+  dans le pied de page de l'application.
+- Vérifié de bout en bout en `file://`, export Excel compris.
+
 ## Plus tard, éventuellement
 - Accès restreint à l'équipe (Pages est public par défaut).
 - Export PDF du rapport.

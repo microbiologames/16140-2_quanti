@@ -2,6 +2,8 @@
 
 | Fichier | Origine |
 |---|---|
-| `adria.svg` | Logotype ADRIA, repris de www.adria.tm.fr |
-| `favicon.svg` | Le « A » du logotype, isolé et recadré |
-| `fonts/kufam-*.woff2` | Police Kufam, sous-ensembles latins — licence OFL, voir `fonts/LICENSE.txt` |
+| `favicon.svg` | Le « A » du logotype ADRIA, isolé et recadré |
+
+Le logotype et la police vivent dans `src/assets/` plutôt qu'ici : Vite ne traite pas le
+contenu de `public/`, et ces fichiers doivent pouvoir être intégrés au bundle pour que la
+version hors ligne tienne dans un fichier unique.
